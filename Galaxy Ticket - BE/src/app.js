@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger/swagger');
+const swaggerAuth = require('./middlewares/swaggerAuth.middleware'); 
 
 const app = express();
 
@@ -9,6 +12,9 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger Documentation
+app.use('/api-docs', swaggerAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Basic route
 app.get('/', (req, res) => {
@@ -26,4 +32,4 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something broke!' });
 });
 
-module.exports = app;  // Quan trọng: Export app
+module.exports = app;  
