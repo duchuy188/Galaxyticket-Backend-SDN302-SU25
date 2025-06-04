@@ -22,6 +22,12 @@
  *         schema:
  *           type: boolean
  *         description: Filter by status
+ *       - in: query
+ *         name: showingStatus
+ *         schema:
+ *           type: string
+ *           enum: ['coming-soon', 'now-showing', 'ended']
+ *         description: Filter by showing status
  *     responses:
  *       200:
  *         description: Success
@@ -38,16 +44,49 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/Movie'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               genre:
+ *                 type: string
+ *                 enum: [
+ *                   'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
+ *                   'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
+ *                   'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
+ *                   'Sports', 'Biography'
+ *                 ]
+ *               duration:
+ *                 type: number
+ *               poster:
+ *                 type: string
+ *                 format: binary
+ *               trailerUrl:
+ *                 type: string
+ *               releaseDate:
+ *                 type: string
+ *                 format: date-time
+ *               country:
+ *                 type: string
+ *               showingStatus:
+ *                 type: string
+ *                 enum: ['coming-soon', 'now-showing', 'ended']
+ *                 description: Movie showing status
+ *             required:
+ *               - title
+ *               - description
+ *               - genre
+ *               - duration
+ *               - releaseDate
+ *               - country
+ *               - poster
  *     responses:
  *       201:
  *         description: Movie created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Movie'
  *       400:
  *         description: Invalid data
  *

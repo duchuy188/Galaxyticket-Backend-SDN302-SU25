@@ -12,12 +12,15 @@ const movieSchema = new mongoose.Schema({
   genre: {
     type: String,
     required: true,
-    enum: [
-        'Cao bồi', 'Chiến tranh', 'Gia đình', 'Giả tưởng', 'Giật gân', 'Hài', 
-        'Hành động', 'Hình sự', 'Hoạt hình', 'Kinh dị', 'Lãng mạn', 'Lịch sử',
-        'Ly kì', 'Nhạc kịch', 'Phiêu lưu', 'Tài liệu', 'Tâm lý', 'Thần thoại',
-        'Thể thao', 'Tiểu sử', 'Tình cảm', 'Tội phạm'
+    enum: {
+      values: [
+        'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
+        'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
+        'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
+        'Sports', 'Biography', 'Romance', 'Crime'
       ],
+      message: 'Invalid genre'
+    }
   },
   duration: {
     type: Number,
@@ -26,7 +29,7 @@ const movieSchema = new mongoose.Schema({
   },
   posterUrl: {
     type: String,
-    default: null
+    required: true
   },
   trailerUrl: {
     type: String,
@@ -44,6 +47,14 @@ const movieSchema = new mongoose.Schema({
     type: String,
     required: true
   
+  },
+  showingStatus: {
+    type: String,
+    enum: {
+      values: ['coming-soon', 'now-showing', 'ended'],
+      message: 'Invalid showing status'
+    },
+    default: 'coming-soon'
   }
 }, {
   timestamps: true
