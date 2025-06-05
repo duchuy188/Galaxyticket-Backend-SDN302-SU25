@@ -40,13 +40,31 @@ const movieSchema = new mongoose.Schema({
     required: true
   },
   status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'  
+  },
+  rejectionReason: {
+    type: String,
+    default: null  
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',  
+    required: true
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',  
+    default: null  
+  },
+  isActive: {
     type: Boolean,
-    default: true
+    default: true  
   },
   country: {
     type: String,
     required: true
-  
   },
   showingStatus: {
     type: String,
@@ -57,7 +75,7 @@ const movieSchema = new mongoose.Schema({
     default: 'coming-soon'
   }
 }, {
-  timestamps: true
+  timestamps: true  
 });
 
 module.exports = mongoose.model('Movie', movieSchema);
