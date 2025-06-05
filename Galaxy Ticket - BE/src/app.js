@@ -21,10 +21,8 @@ app.get('/', (req, res) => {
     res.send('Galaxy Ticket API is running...');
 });
 
-// Routes will be added here
-// app.use('/api/auth', require('./routes/auth.route'));
-// app.use('/api/movies', require('./routes/movie.route'));
-// etc...
+app.use('/api/movies', require('./routes/movieRoutes'));
+// app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
 
 // Error handling middleware
 app.use((err, req, res, next) => {
