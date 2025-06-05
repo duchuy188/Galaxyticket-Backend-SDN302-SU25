@@ -21,6 +21,11 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         enum: ['pending', 'success', 'failed'],
         default: 'pending'
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     }
 }, {
     timestamps: true, 

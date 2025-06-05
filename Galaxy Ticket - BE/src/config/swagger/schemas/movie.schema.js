@@ -11,6 +11,7 @@
  *         - duration
  *         - releaseDate
  *         - country
+ *         - posterUrl
  *       properties:
  *         title:
  *           type: string
@@ -19,7 +20,7 @@
  *         description:
  *           type: string
  *           description: Movie description
- *           example: "After Thanos wiped out half of all life in the universe, the remaining Avengers must do what's necessary to undo the Mad Titan's deed."
+ *           example: "After Thanos wiped out half of all life in the universe..."
  *         genre:
  *           type: string
  *           description: Movie genre
@@ -27,7 +28,7 @@
  *             'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy', 
  *             'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
  *             'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
- *             'Sports', 'Biography', 'Romance', 'Crime'
+ *             'Sports', 'Biography'
  *           ]
  *         duration:
  *           type: number
@@ -36,9 +37,8 @@
  *           example: 180
  *         posterUrl:
  *           type: string
- *           description: Movie poster URL
- *           example: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBHRUaXOgHICRgdH9rGhKSWvITaE75mJe6og&s"
- *           nullable: true
+ *           description: Movie poster URL (auto-generated from uploaded file)
+ *           example: "https://res.cloudinary.com/..."
  *         trailerUrl:
  *           type: string
  *           description: Movie trailer URL
@@ -57,6 +57,12 @@
  *           type: string
  *           description: Production country
  *           example: "USA"
+ *         showingStatus:
+ *           type: string
+ *           description: Movie showing status
+ *           enum: ['coming-soon', 'now-showing', 'ended']
+ *           default: 'coming-soon'
+ *           example: "now-showing"
  *         createdAt:
  *           type: string
  *           format: date-time
