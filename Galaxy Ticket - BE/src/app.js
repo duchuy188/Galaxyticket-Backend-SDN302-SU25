@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger/swagger');
 const swaggerAuth = require('./middlewares/swaggerAuth.middleware'); 
+const screeningRoutes = require('./routes/screeningRoutes');
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.get('/', (req, res) => {
 
 app.use('/api/movies', require('./routes/movieRoutes'));
 // app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
+app.use('/api/screenings', screeningRoutes);
+app.use('/', screeningRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
