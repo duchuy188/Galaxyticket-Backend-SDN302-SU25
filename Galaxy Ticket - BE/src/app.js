@@ -1,3 +1,5 @@
+require('./models');  
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -22,8 +24,9 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/movies', require('./routes/movieRoutes'));
+app.use('/api/approval-requests', require('./routes/approvalRequestRoutes'));
 // app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
-
+    
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

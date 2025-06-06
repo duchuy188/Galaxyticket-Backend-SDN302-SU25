@@ -12,6 +12,7 @@
  *         - releaseDate
  *         - country
  *         - posterUrl
+ *         - createdBy
  *       properties:
  *         title:
  *           type: string
@@ -50,9 +51,10 @@
  *           description: Movie release date
  *           example: "2024-03-27"
  *         status:
- *           type: boolean
- *           description: Movie status (active/inactive)
- *           default: true
+ *           type: string
+ *           enum: ['pending', 'approved', 'rejected']
+ *           default: 'pending'
+ *           description: Approval status of the movie
  *         country:
  *           type: string
  *           description: Production country
@@ -71,4 +73,19 @@
  *           type: string
  *           format: date-time
  *           description: Record last update timestamp
+ *         createdBy:
+ *           type: string
+ *           description: ID of the staff member who created the movie
+ *         approvedBy:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the manager who approved/rejected the movie
+ *         rejectionReason:
+ *           type: string
+ *           nullable: true
+ *           description: Reason for rejection if status is rejected
+ *         isActive:
+ *           type: boolean
+ *           default: true
+ *           description: Soft delete flag
  */

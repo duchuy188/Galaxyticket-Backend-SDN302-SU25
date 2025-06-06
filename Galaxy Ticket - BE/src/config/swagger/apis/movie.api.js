@@ -20,8 +20,9 @@
  *       - in: query
  *         name: status
  *         schema:
- *           type: boolean
- *         description: Filter by status
+ *           type: string
+ *           enum: ['pending', 'approved', 'rejected']
+ *         description: Filter by approval status
  *       - in: query
  *         name: showingStatus
  *         schema:
@@ -30,13 +31,9 @@
  *         description: Filter by showing status
  *     responses:
  *       200:
- *         description: Success
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Movie'
+ *         description: |
+ *           For public: Returns only approved movies
+ *           For staff/managers: Returns all movies with status
  *   
  *   post:
  *     summary: Create a new movie
@@ -76,6 +73,10 @@
  *                 type: string
  *                 enum: ['coming-soon', 'now-showing', 'ended']
  *                 description: Movie showing status
+ *               createdBy:
+ *                 type: string
+ *                 required: true
+ *                 description: ID of the staff member creating the movie
  *             required:
  *               - title
  *               - description
@@ -86,7 +87,7 @@
  *               - poster
  *     responses:
  *       201:
- *         description: Movie created successfully
+ *         description: Movie created and pending approval
  *       400:
  *         description: Invalid data
  *
@@ -127,11 +128,9 @@
  *             $ref: '#/components/schemas/Movie'
  *     responses:
  *       200:
- *         description: Update successful
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Movie'
+ *         description: |
+ *           If updating pending/rejected movie: Updated successfully
+ *           If updating approved movie: Update submitted for approval
  *       404:
  *         description: Movie not found
  *
@@ -147,6 +146,42 @@
  *     responses:
  *       200:
  *         description: Delete successful
+ *       404:
+ *         description: Movie not found
+ *
+ * /api/movies/{id}/approve:
+ *   put:
+ *     summary: Approve or reject a movie (Manager only)
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *               - managerId
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: ['approved', 'rejected']
+ *               managerId:
+ *                 type: string
+ *               rejectionReason:
+ *                 type: string
+ *                 description: Required when status is 'rejected'
+ *     responses:
+ *       200:
+ *         description: Movie approval status updated successfully
+ *       400:
+ *         description: Invalid request or movie not in pending status
  *       404:
  *         description: Movie not found
  */
