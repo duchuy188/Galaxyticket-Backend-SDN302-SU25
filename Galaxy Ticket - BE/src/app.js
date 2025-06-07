@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger/swagger');
-const swaggerAuth = require('./middlewares/swaggerAuth.middleware'); 
+const swaggerAuth = require('./middlewares/swaggerAuth.middleware');
 
 const app = express();
 
@@ -23,6 +23,9 @@ app.get('/', (req, res) => {
 
 app.use('/api/movies', require('./routes/movieRoutes'));
 // app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
+app.use('/api/bookings', require('./routes/bookingRoutes'));
+
+app.use('/api/seats', require('./routes/seatRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
