@@ -34,7 +34,7 @@
 
 /**
  * @swagger
- * /seats/reserve:
+ * /api/seats/reserve:
  *   post:
  *     summary: Đặt giữ ghế
  *     tags: [Seats]
@@ -74,7 +74,7 @@
 
 /**
  * @swagger
- * /seats/status:
+ * /api/seats/status:
  *   get:
  *     summary: Kiểm tra trạng thái ghế
  *     tags: [Seats]
@@ -114,7 +114,7 @@
 
 /**
  * @swagger
- * /seats/release-expired:
+ * /api/seats/release-expired:
  *   post:
  *     summary: Giải phóng các ghế hết hạn
  *     tags: [Seats]
@@ -136,7 +136,7 @@
 
 /**
  * @swagger
- * /seats/screening/{screeningId}:
+ * /api/seats/screening/{screeningId}:
  *   get:
  *     summary: Lấy danh sách ghế của một suất chiếu
  *     tags: [Seats]

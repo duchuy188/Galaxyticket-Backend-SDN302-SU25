@@ -25,6 +25,8 @@ app.use('/api/movies', require('./routes/movieRoutes'));
 // app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 
+app.use('/api/seats', require('./routes/seatRoutes'));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
