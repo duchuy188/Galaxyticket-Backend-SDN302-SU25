@@ -26,13 +26,32 @@ const screeningSchema = new mongoose.Schema({
         }
     },
     status: {
-        type: Boolean,
-        default: true
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    rejectionReason: {
+        type: String,
+        default: null
     },
     ticketPrice: {
         type: Number,
         required: true,
         min: [0, 'Giá vé không thể âm']
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
 }, {
     timestamps: true

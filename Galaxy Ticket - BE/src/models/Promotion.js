@@ -53,12 +53,28 @@ const promotionSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'  
+    },
+    rejectionReason: {
+        type: String,
+        default: null  
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', 
+        required: true
+    },
+    approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', 
+        default: null  
     }
+}, {
+    timestamps: true  
 });
-
-
-promotionSchema.index({ code: 1 });
-promotionSchema.index({ startDate: 1, endDate: 1 });
-promotionSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Promotion', promotionSchema);
