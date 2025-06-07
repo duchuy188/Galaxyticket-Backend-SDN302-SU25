@@ -33,6 +33,10 @@
  *                   type: string
  *               totalPrice:
  *                 type: number
+ *               promotionId:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Optional promotion ID to apply to the booking. Can be omitted, null, or empty string.
  *     responses:
  *       201:
  *         description: Booking created successfully
@@ -90,6 +94,10 @@
  *                   type: string
  *               totalPrice:
  *                 type: number
+ *               promotionId:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Optional promotion ID to apply to the booking. Can be omitted, null, or empty string.
  *     responses:
  *       200:
  *         description: Booking updated successfully

@@ -1,11 +1,17 @@
 const Booking = require('../models/Booking');
 const Screening = require('../models/Screening');
 const Seat = require('../models/Seat');
+const mongoose = require('mongoose');
 
 // Create a new booking
 exports.createBooking = async (req, res) => {
     try {
-        const { userId, screeningId, seatIds, totalPrice } = req.body;
+        const { userId, screeningId, seatIds, promotionId } = req.body;
+
+        // Validate required fields
+        if (!userId || !screeningId || !seatIds) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
 
         // Validate if screening exists
         const screening = await Screening.findById(screeningId);
@@ -30,14 +36,37 @@ exports.createBooking = async (req, res) => {
             return res.status(400).json({ message: 'One or more seats are already booked' });
         }
 
-        const booking = new Booking({
+        // Calculate total price based on screening's ticketPrice and number of seats
+        const totalPrice = screening.ticketPrice * seatIds.length;
+
+        const bookingData = {
             userId,
             screeningId,
             seatIds,
             totalPrice,
             paymentStatus: 'pending'
-        });
+        };
 
+        // Handle promotionId
+        if (promotionId !== undefined && promotionId !== null) {
+            // Special case: if promotionId is "string", treat it as no promotion
+            if (promotionId === "string") {
+                // Do nothing, continue without promotionId
+            }
+            // If promotionId is empty string or just whitespace, ignore it
+            else if (typeof promotionId === 'string' && promotionId.trim() === '') {
+                // Do nothing, continue without promotionId
+            }
+            // If promotionId is provided, validate it
+            else if (typeof promotionId === 'string') {
+                if (!mongoose.Types.ObjectId.isValid(promotionId)) {
+                    return res.status(400).json({ message: 'Invalid promotion ID format' });
+                }
+                bookingData.promotionId = promotionId;
+            }
+        }
+
+        const booking = new Booking(bookingData);
         await booking.save();
         res.status(201).json(booking);
     } catch (error) {
@@ -73,7 +102,7 @@ exports.cancelBooking = async (req, res) => {
 exports.updateBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
-        const { seatIds, totalPrice } = req.body;
+        const { seatIds, totalPrice, promotionId } = req.body;
 
         const booking = await Booking.findById(bookingId);
         if (!booking) {
@@ -108,6 +137,10 @@ exports.updateBooking = async (req, res) => {
 
         if (totalPrice !== undefined) {
             booking.totalPrice = totalPrice;
+        }
+
+        if (promotionId !== undefined) {
+            booking.promotionId = promotionId;
         }
 
         await booking.save();

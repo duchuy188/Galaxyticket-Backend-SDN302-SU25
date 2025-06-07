@@ -16,6 +16,10 @@ const seatSchema = new mongoose.Schema({
         required: true,
         enum: ['available', 'reserved', 'booked'],
         default: 'available'
+    },
+    reservedAt: {
+        type: Date,
+        default: null
     }
 });
 

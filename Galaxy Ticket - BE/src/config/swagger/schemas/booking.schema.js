@@ -28,6 +28,10 @@
  *         totalPrice:
  *           type: number
  *           description: Total price of the booking
+ *         promotionId:
+ *           type: string
+ *           nullable: true
+ *           description: The id of the promotion applied to the booking (optional - can be omitted or null)
  *         paymentStatus:
  *           type: string
  *           enum: [pending, paid, failed]

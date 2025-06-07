@@ -18,7 +18,10 @@ exports.reserveSeat = async (req, res) => {
                 seatNumber,
                 status: 'available'
             },
-            { status: 'reserved' },
+            {
+                status: 'reserved',
+                reservedAt: new Date()
+            },
             { new: true }
         );
 
@@ -71,10 +74,18 @@ exports.checkSeatStatus = async (req, res) => {
 // Release expired seats
 exports.releaseExpiredSeats = async (req, res) => {
     try {
-        // Find all reserved seats and update them to available
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+        // Find all reserved seats that were reserved more than 5 minutes ago
         const result = await Seat.updateMany(
-            { status: 'reserved' },
-            { status: 'available' }
+            {
+                status: 'reserved',
+                reservedAt: { $lt: fiveMinutesAgo }
+            },
+            {
+                status: 'available',
+                reservedAt: null
+            }
         );
 
         res.status(200).json({
