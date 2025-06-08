@@ -7,8 +7,16 @@ const swaggerAuth = require('./middlewares/swaggerAuth.middleware');
 
 const app = express();
 
+// CORS configuration
+const corsOptions = {
+    origin: ['http://localhost:3000', 'http://localhost:5173'], // Thêm các domain của frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+};
+
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
