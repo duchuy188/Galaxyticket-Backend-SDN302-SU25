@@ -1,78 +1,11 @@
+// Screening API paths for Swagger
+
 /**
  * @swagger
  * /api/screenings:
- *   post:
- *     tags: ['Screening']
- *     summary: Tạo suất chiếu mới
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               movieId: 
- *                 type: string
- *                 example: '60f7c0b8e1b1c8a1b8e1b1c8'
- *               roomId:
- *                 type: string
- *                 example: '60f7c0b8e1b1c8a1b8e1b1c9'
- *               startTime:
- *                 type: string
- *                 format: date-time
- *                 example: '2024-06-01T14:00:00.000Z'
- *               endTime:
- *                 type: string
- *                 format: date-time
- *                 example: '2024-06-01T16:00:00.000Z'
- *               status:
- *                 type: boolean
- *                 example: true
- *               ticketPrice:
- *                 type: number
- *                 example: 90000
- *             required:
- *               - movieId
- *               - roomId
- *               - startTime
- *               - endTime
- *               - ticketPrice
- *     responses:
- *       201:
- *         description: Tạo suất chiếu thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Screening'
- *       400:
- *         description: Dữ liệu không hợp lệ
- *
  *   get:
- *     tags: ['Screening']
- *     summary: Lấy danh sách suất chiếu
- *     parameters:
- *       - name: movieId
- *         in: query
- *         schema:
- *           type: string
- *       - name: roomId
- *         in: query
- *         schema:
- *           type: string
- *       - name: status
- *         in: query
- *         schema:
- *           type: boolean
- *       - name: startTime
- *         in: query
- *         schema:
- *           type: string
- *           format: date-time
- *       - name: endTime
- *         in: query
- *         schema:
- *           type: string
- *           format: date-time
+ *     summary: Lấy danh sách tất cả suất chiếu
+ *     tags: [Screening]
  *     responses:
  *       200:
  *         description: Danh sách suất chiếu
@@ -82,123 +15,91 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Screening'
- * 
- * /api/screenings/{id}:
- *   get:
- *     tags: ['Screening']
- *     summary: Lấy chi tiết suất chiếu
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Chi tiết suất chiếu
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Screening'
- *       404:
- *         description: Không tìm thấy suất chiếu
- *
- *   put:
- *     tags: ['Screening']
- *     summary: Cập nhật suất chiếu
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
+ *   post:
+ *     summary: Tạo suất chiếu mới
+ *     tags: [Screening]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               movieId:
- *                 type: string
- *               roomId:
- *                 type: string
- *               startTime:
- *                 type: string
- *                 format: date-time
- *               endTime:
- *                 type: string
- *                 format: date-time
- *               status:
- *                 type: boolean
- *               ticketPrice:
- *                 type: number
+ *             $ref: '#/components/schemas/ScreeningCreate'
  *     responses:
- *       200:
- *         description: Cập nhật suất chiếu thành công
+ *       201:
+ *         description: Tạo thành công
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Screening'
  *       400:
- *         description: Dữ liệu không hợp lệ
- *       404:
- *         description: Không tìm thấy suất chiếu
- *
- *   delete:
- *     tags: ['Screening']
- *     summary: Xóa suất chiếu
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Xóa thành công
- *       404:
- *         description: Không tìm thấy suất chiếu
- *
- * /api/screenings/check-overlap:
- *   post:
- *     tags: ['Screening']
- *     summary: Kiểm tra trùng giờ suất chiếu trong cùng phòng
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               roomId:
- *                 type: string
- *                 example: '60f7c0b8e1b1c8a1b8e1b1c9'
- *               startTime:
- *                 type: string
- *                 format: date-time
- *                 example: '2024-06-01T14:00:00.000Z'
- *               endTime:
- *                 type: string
- *                 format: date-time
- *                 example: '2024-06-01T16:00:00.000Z'
- *             required:
- *               - roomId
- *               - startTime
- *               - endTime
- *     responses:
- *       200:
- *         description: Kết quả kiểm tra
+ *         description: Lỗi đầu vào hoặc trùng giờ chiếu
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 isOverlap:
- *                   type: boolean
- *                   example: false
- *                 overlappedScreenings:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Screening'
+ *                 message:
+ *                   type: string
+ * /api/screenings/{id}:
+ *   get:
+ *     summary: Lấy chi tiết suất chiếu theo ID
+ *     tags: [Screening]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Screening ID
+ *     responses:
+ *       200:
+ *         description: Thông tin suất chiếu
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Screening'
+ *       404:
+ *         description: Không tìm thấy
+ *   put:
+ *     summary: Cập nhật suất chiếu
+ *     tags: [Screening]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Screening ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ScreeningUpdate'
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Screening'
+ *       400:
+ *         description: Lỗi đầu vào hoặc trùng giờ chiếu
+ *       404:
+ *         description: Không tìm thấy
+ *   delete:
+ *     summary: Xóa (deactivate) suất chiếu
+ *     tags: [Screening]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Screening ID
+ *     responses:
+ *       200:
+ *         description: Đã xóa (deactivate) thành công
+ *       404:
+ *         description: Không tìm thấy
  */

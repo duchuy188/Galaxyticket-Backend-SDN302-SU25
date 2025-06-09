@@ -24,11 +24,11 @@ app.get('/', (req, res) => {
 
 app.use('/api/movies', require('./routes/movieRoutes'));
 // app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
-app.use('/api/screenings', screeningRoutes);
-app.use('/', screeningRoutes);
-// ... existing code ...
+
 app.use('/api/rooms', require('./routes/roomRoutes'));
 // ... existing code ...
+
+app.use('/api/screenings', screeningRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
