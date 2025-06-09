@@ -3,11 +3,17 @@ const mongoose = require('mongoose');
 const movieSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
+    minLength: [2, 'Title must be at least 2 characters'],
+    maxLength: [100, 'Title cannot exceed 500 characters']
   },
   description: {
     type: String,
-    required: true   
+    required: true,
+    trim: true,
+    minLength: [10, 'Description must be at least 10 characters'],
+    maxLength: [1000, 'Description cannot exceed 1000 characters']
   },
   genre: {
     type: String,
@@ -17,7 +23,7 @@ const movieSchema = new mongoose.Schema({
         'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
         'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
         'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
-        'Sports', 'Biography', 'Romance', 'Crime'
+        'Sports', 'Biography'
       ],
       message: 'Invalid genre'
     }
@@ -25,7 +31,8 @@ const movieSchema = new mongoose.Schema({
   duration: {
     type: Number,
     required: true,
-    min: 1
+    min: [30, 'Duration must be at least 30 minutes'],
+    max: [500, 'Duration cannot exceed 500 minutes']
   },
   posterUrl: {
     type: String,
@@ -33,11 +40,29 @@ const movieSchema = new mongoose.Schema({
   },
   trailerUrl: {
     type: String,
+    validate: {
+      validator: function(v) {
+        if (!v) return true; 
+        try {
+          new URL(v);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      },
+      message: 'Trailer URL must be a valid URL format'
+    },
     default: null
   },
   releaseDate: {
     type: Date,
-    required: true
+    required: true,
+    validate: {
+      validator: function(v) {
+        return v >= new Date();
+      },
+      message: 'Release date must be in the future'
+    }
   },
   status: {
     type: String,
@@ -46,7 +71,8 @@ const movieSchema = new mongoose.Schema({
   },
   rejectionReason: {
     type: String,
-    default: null  
+    default: null,
+    maxLength: [500, 'Rejection reason cannot exceed 1000 characters']
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -64,7 +90,10 @@ const movieSchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
+    minLength: [2, 'Country name must be at least 2 characters'],
+    maxLength: [50, 'Country name cannot exceed 50 characters']
   },
   showingStatus: {
     type: String,
@@ -73,9 +102,33 @@ const movieSchema = new mongoose.Schema({
       message: 'Invalid showing status'
     },
     default: 'coming-soon'
-  }
+  },
+  producer: {
+    type: String,
+    required: true,
+    trim: true,
+    minLength: [2, 'Producer name must be at least 2 characters'],
+    maxLength: [100, 'Producer name cannot exceed 100 characters']
+  },
+  directors: [{
+    type: String,
+    required: true,
+    trim: true,
+    minLength: [2, 'Director name must be at least 2 characters'],
+    maxLength: [100, 'Director name cannot exceed 100 characters']
+  }],
+  actors: [{
+    type: String,
+    required: true,
+    trim: true,
+    minLength: [2, 'Actor name must be at least 2 characters'],
+    maxLength: [100, 'Actor name cannot exceed 100 characters']
+  }]
 }, {
   timestamps: true  
 });
+
+const uniqueGenres = [...new Set(movieSchema.path('genre').enumValues)];
+movieSchema.path('genre').enumValues = uniqueGenres;
 
 module.exports = mongoose.model('Movie', movieSchema);

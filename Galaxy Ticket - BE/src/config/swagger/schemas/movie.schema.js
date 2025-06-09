@@ -13,6 +13,9 @@
  *         - country
  *         - posterUrl
  *         - createdBy
+ *         - producer
+ *         - directors
+ *         - actors
  *       properties:
  *         title:
  *           type: string
@@ -88,4 +91,20 @@
  *           type: boolean
  *           default: true
  *           description: Soft delete flag
+ *         producer:
+ *           type: string
+ *           description: Movie producer/production company
+ *           example: "Jungka Bangkok"
+ *         directors:
+ *           type: array
+ *           description: List of movie directors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Wutthiphong Sukanin"]
+ *         actors:
+ *           type: array
+ *           description: List of movie actors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Kittikun Chattongkum", "Paween Purijitpanya"]
  */

@@ -6,7 +6,7 @@ const { uploadImage } = require('../services/uploadService');
 const getAllMovies = async (req, res) => {
     try {
         const { genre, status, showingStatus } = req.query;
-        let query = {};
+        let query = { isActive: true }; 
         
         if (genre) query.genre = genre;
         if (status) query.status = status;
@@ -32,13 +32,18 @@ const getAllMovies = async (req, res) => {
 
 const getMovieById = async (req, res) => {
     try {
-        const movie = await Movie.findById(req.params.id);
+        const movie = await Movie.findOne({
+            _id: req.params.id,
+            isActive: true 
+        });
+
         if (!movie) {
             return res.status(404).json({
                 success: false,
                 message: 'Movie not found'
             });
         }
+
         res.status(200).json({
             success: true,
             message: 'Get movie successfully',
@@ -57,8 +62,20 @@ const createMovie = async (req, res) => {
     try {
         const { 
             title, description, genre, duration, 
-            releaseDate, country, trailerUrl, showingStatus 
+            releaseDate, country, trailerUrl, showingStatus,
+            producer, directors, actors  // Thêm các trường mới
         } = req.body;
+
+        if (trailerUrl) {
+            try {
+                new URL(trailerUrl);
+            } catch (err) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid URL format for trailer URL'
+                });
+            }
+        }
 
         if (!req.file) {
             return res.status(400).json({
@@ -67,9 +84,17 @@ const createMovie = async (req, res) => {
             });
         }
 
+        // Validate các trường mới
+        if (!producer || !directors || !directors.length || !actors || !actors.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'Producer, directors and actors are required'
+            });
+        }
+
         const posterUrl = await uploadImage(req.file);
 
-        // Tạo movie với status pending
+        // Tạo movie với validated data
         const movie = await Movie.create({
             title,
             description,
@@ -79,14 +104,17 @@ const createMovie = async (req, res) => {
             trailerUrl,
             releaseDate,
             country,
-            showingStatus: showingStatus || 'coming_soon',
+            showingStatus: showingStatus || 'coming-soon',
             status: 'pending',
-            createdBy: req.body.createdBy // Tạm thời nhận từ body
+            createdBy: req.body.createdBy,
+            producer,           // Thêm producer
+            directors,         // Thêm directors
+            actors            // Thêm actors
         });
 
         // Tạo approval request
         await ApprovalRequest.create({
-            staffId: req.body.createdBy, // Tạm thời nhận từ body
+            staffId: req.body.createdBy,
             type: 'movie',
             requestData: movie.toObject(),
             referenceId: movie._id,
@@ -129,21 +157,36 @@ const updateMovie = async (req, res) => {
             updateData.posterUrl = await uploadImage(req.file);
         }
 
-        // Nếu đang approved và update, set lại status pending
+        
         if (movie.status === 'approved') {
+          
             updateData.status = 'pending';
             updateData.approvedBy = null;
             updateData.rejectionReason = null;
 
             // Tạo approval request mới
             await ApprovalRequest.create({
-                staffId: movie.createdBy, // Dùng createdBy của movie
+                staffId: movie.createdBy,
+                type: 'movie',
+                requestData: { ...movie.toObject(), ...updateData },
+                referenceId: movie._id,
+                status: 'pending'
+            });
+        } else if (movie.status === 'rejected') {
+           
+            updateData.status = 'pending';
+            updateData.rejectionReason = null;
+
+        
+            await ApprovalRequest.create({
+                staffId: movie.createdBy,
                 type: 'movie',
                 requestData: { ...movie.toObject(), ...updateData },
                 referenceId: movie._id,
                 status: 'pending'
             });
         }
+       
 
         const updatedMovie = await Movie.findByIdAndUpdate(
             req.params.id,
@@ -153,61 +196,10 @@ const updateMovie = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: movie.status === 'approved' ? 
-                'Movie update submitted for approval' : 
-                'Movie updated successfully',
+            message: movie.status === 'pending' ? 
+                'Movie updated successfully' : 
+                'Movie update submitted for approval',
             data: updatedMovie
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-// Approve/reject movie
-const approveMovie = async (req, res) => {
-    try {
-        const { status, rejectionReason } = req.body;
-        const movie = await Movie.findById(req.params.id);
-
-        if (!movie) {
-            return res.status(404).json({
-                success: false,
-                message: 'Movie not found'
-            });
-        }
-
-        if (movie.status !== 'pending') {
-            return res.status(400).json({
-                success: false,
-                message: 'Movie is not pending approval'
-            });
-        }
-
-        movie.status = status;
-        movie.approvedBy = req.body.managerId; // Tạm thời nhận từ body
-        if (status === 'rejected') {
-            movie.rejectionReason = rejectionReason;
-        }
-
-        await movie.save();
-
-        // Update approval request
-        await ApprovalRequest.findOneAndUpdate(
-            { referenceId: movie._id, status: 'pending' },
-            { 
-                status,
-                managerId: req.body.managerId, // Tạm thời nhận từ body
-                rejectionReason: status === 'rejected' ? rejectionReason : null
-            }
-        );
-
-        res.status(200).json({
-            success: true,
-            message: `Movie ${status} successfully`,
-            data: movie
         });
     } catch (error) {
         res.status(500).json({
@@ -222,7 +214,7 @@ const deleteMovie = async (req, res) => {
     try {
         const movie = await Movie.findByIdAndUpdate(
             req.params.id,
-            { status: false },
+            { isActive: false },
             { new: true }
         );
 
@@ -245,7 +237,7 @@ const deleteMovie = async (req, res) => {
     }
 };
 
-// Helper function to validate URL
+
 const isValidUrl = (string) => {
     try {
         new URL(string);
@@ -260,6 +252,5 @@ module.exports = {
     getMovieById,
     createMovie,
     updateMovie,
-    approveMovie,
     deleteMovie
 };

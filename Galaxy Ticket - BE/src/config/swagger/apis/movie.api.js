@@ -77,6 +77,19 @@
  *                 type: string
  *                 required: true
  *                 description: ID of the staff member creating the movie
+ *               producer:
+ *                 type: string
+ *                 description: Movie producer/production company
+ *               directors:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of movie directors
+ *               actors:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of movie actors
  *             required:
  *               - title
  *               - description
@@ -85,6 +98,9 @@
  *               - releaseDate
  *               - country
  *               - poster
+ *               - producer
+ *               - directors
+ *               - actors
  *     responses:
  *       201:
  *         description: Movie created and pending approval
@@ -123,9 +139,42 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/Movie'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               genre:
+ *                 type: string
+ *               duration:
+ *                 type: number
+ *               poster:
+ *                 type: string
+ *                 format: binary
+ *               trailerUrl:
+ *                 type: string
+ *               releaseDate:
+ *                 type: string
+ *                 format: date-time
+ *               country:
+ *                 type: string
+ *               showingStatus:
+ *                 type: string
+ *               createdBy:
+ *                 type: string
+ *               producer:
+ *                 type: string
+ *               directors:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               actors:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       200:
  *         description: |
@@ -146,42 +195,6 @@
  *     responses:
  *       200:
  *         description: Delete successful
- *       404:
- *         description: Movie not found
- *
- * /api/movies/{id}/approve:
- *   put:
- *     summary: Approve or reject a movie (Manager only)
- *     tags: [Movies]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *               - managerId
- *             properties:
- *               status:
- *                 type: string
- *                 enum: ['approved', 'rejected']
- *               managerId:
- *                 type: string
- *               rejectionReason:
- *                 type: string
- *                 description: Required when status is 'rejected'
- *     responses:
- *       200:
- *         description: Movie approval status updated successfully
- *       400:
- *         description: Invalid request or movie not in pending status
  *       404:
  *         description: Movie not found
  */

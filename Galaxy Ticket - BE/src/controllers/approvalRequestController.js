@@ -58,6 +58,7 @@ const updateRequest = async (req, res) => {
         const { status, rejectionReason, managerId } = req.body;
         const request = await ApprovalRequest.findById(req.params.id);
 
+       
         if (!request) {
             return res.status(404).json({
                 success: false,
@@ -65,6 +66,7 @@ const updateRequest = async (req, res) => {
             });
         }
 
+  
         if (request.status !== 'pending') {
             return res.status(400).json({
                 success: false,
@@ -72,33 +74,84 @@ const updateRequest = async (req, res) => {
             });
         }
 
-        // Update movie first
-        const updatedMovie = await Movie.findByIdAndUpdate(
-            request.referenceId, 
-            {
-                status: status,
-                approvedBy: managerId,
-                rejectionReason: status === 'rejected' ? rejectionReason : null
-            },
-            { new: true }
-        );
+   
+        if (!status || !managerId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Status and managerId are required'
+            });
+        }
 
-        // Update request including requestData
-        request.status = status;
-        request.managerId = managerId;
-        request.rejectionReason = status === 'rejected' ? rejectionReason : null;
-        request.requestData = updatedMovie; // Update requestData với movie mới
+        if (status === 'rejected' && !rejectionReason) {
+            return res.status(400).json({
+                success: false,
+                message: 'Rejection reason is required when rejecting a request'
+            });
+        }
+
+    
+        switch(request.type) {
+            case 'movie':
+                const updatedMovie = await Movie.findByIdAndUpdate(
+                    request.referenceId, 
+                    {
+                        status: status,
+                        approvedBy: managerId,
+                        rejectionReason: status === 'rejected' ? rejectionReason : null
+                    },
+                    { new: true }
+                );
+
+                if (!updatedMovie) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Referenced movie not found'
+                    });
+                }
+
+                request.status = status;
+                request.managerId = managerId;
+                request.rejectionReason = status === 'rejected' ? rejectionReason : null;
+                request.requestData = updatedMovie;
+                break;
+
+            // 6. Chuẩn bị cho tương lai khi thêm các loại request khác
+            case 'promotion':
+                // TODO: Xử lý promotion approval
+                return res.status(400).json({
+                    success: false,
+                    message: 'Promotion approval not implemented yet'
+                });
+
+            case 'screening':
+                // TODO: Xử lý screening approval
+                return res.status(400).json({
+                    success: false,
+                    message: 'Screening approval not implemented yet'
+                });
+
+            default:
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid request type'
+                });
+        }
+
+
         await request.save();
 
+  
         res.status(200).json({
             success: true,
             message: `Request ${status} successfully`,
             data: request
         });
+
     } catch (error) {
+        console.error('Error in updateRequest:', error);
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message || 'Internal server error'
         });
     }
 };
