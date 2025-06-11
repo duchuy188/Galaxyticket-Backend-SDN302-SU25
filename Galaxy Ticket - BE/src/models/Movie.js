@@ -59,7 +59,14 @@ const movieSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        return v >= new Date();
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const releaseDate = new Date(v);
+        releaseDate.setHours(0, 0, 0, 0);
+        
+        return releaseDate >= today;
       },
       message: 'Release date must be in the future'
     }

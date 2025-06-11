@@ -33,7 +33,6 @@ const transactionSchema = new mongoose.Schema({
 });
 
 transactionSchema.index({ bookingId: 1 });
-transactionSchema.index({ vnpayCode: 1 });
 transactionSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);
