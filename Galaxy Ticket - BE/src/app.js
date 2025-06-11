@@ -13,7 +13,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Thêm các domain của frontend
+    origin: ['http://localhost:3000', 'http://localhost:5173'], 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -39,7 +39,7 @@ app.get("/", (req, res) => {
 
 app.use('/api/movies', require('./routes/movieRoutes'));
 app.use('/api/approval-requests', require('./routes/approvalRequestRoutes'));
-// app.use('/api/theaters', require('./routes/theaterRoutes')); // Thêm sau khi làm theater
+
     
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 
@@ -49,6 +49,8 @@ app.use('/api/seats', require('./routes/seatRoutes'));
 app.use("/api/auth", require("./routes/auth.route"));
 // app.use('/api/movies', require('./routes/movie.route'));
 
+const theaterRoutes = require('./routes/theaterRoutes');
+app.use('/api/theaters', theaterRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
