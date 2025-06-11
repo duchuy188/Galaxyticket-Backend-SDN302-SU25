@@ -5,7 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger/swagger');
-const swaggerAuth = require('./middlewares/swaggerAuth.middleware');
+const swaggerAuth = require('./middlewares/swaggerAuth.middleware'); 
+const screeningRoutes = require('./routes/screeningRoutes');
 
 
 
@@ -51,6 +52,13 @@ app.use("/api/auth", require("./routes/auth.route"));
 
 const theaterRoutes = require('./routes/theaterRoutes');
 app.use('/api/theaters', theaterRoutes);
+
+app.use('/api/rooms', require('./routes/roomRoutes'));
+// ... existing code ...
+
+app.use('/api/screenings', screeningRoutes);
+
+app.use('/api/promotions', require('./routes/promotionRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -45,6 +45,7 @@ const promotionSchema = new mongoose.Schema({
         required: true,
         validate: {
             validator: function(value) {
+                if (!this.startDate) return true;
                 return value > this.startDate;
             },
             message: 'Ngày kết thúc phải sau ngày bắt đầu'
