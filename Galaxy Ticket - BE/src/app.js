@@ -30,6 +30,8 @@ app.use('/api/rooms', require('./routes/roomRoutes'));
 
 app.use('/api/screenings', screeningRoutes);
 
+app.use('/api/promotions', require('./routes/promotionRoutes'));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
