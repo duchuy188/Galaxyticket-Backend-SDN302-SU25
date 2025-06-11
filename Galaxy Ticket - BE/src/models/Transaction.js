@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema({
     vnpayCode: {
         type: String,
         required: true,
-        unique: true 
+        unique: true
     },
     amount: {
         type: Number,
@@ -28,8 +28,8 @@ const transactionSchema = new mongoose.Schema({
         required: true
     }
 }, {
-    timestamps: true, 
-    collection: 'transactions'  
+    timestamps: true,
+    collection: 'transactions'
 });
 
 transactionSchema.index({ bookingId: 1 });
