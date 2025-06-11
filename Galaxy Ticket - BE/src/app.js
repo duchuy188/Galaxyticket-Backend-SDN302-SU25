@@ -7,7 +7,6 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger/swagger');
 const swaggerAuth = require('./middlewares/swaggerAuth.middleware'); 
 const screeningRoutes = require('./routes/screeningRoutes');
-const swaggerAuth = require('./middlewares/swaggerAuth.middleware');
 
 
 
