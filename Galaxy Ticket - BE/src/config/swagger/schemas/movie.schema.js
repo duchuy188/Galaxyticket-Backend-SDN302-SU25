@@ -12,6 +12,13 @@
  *         - releaseDate
  *         - country
  *         - posterUrl
+<<<<<<< HEAD
+=======
+ *         - createdBy
+ *         - producer
+ *         - directors
+ *         - actors
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *       properties:
  *         title:
  *           type: string
@@ -50,9 +57,16 @@
  *           description: Movie release date
  *           example: "2024-03-27"
  *         status:
+<<<<<<< HEAD
  *           type: boolean
  *           description: Movie status (active/inactive)
  *           default: true
+=======
+ *           type: string
+ *           enum: ['pending', 'approved', 'rejected']
+ *           default: 'pending'
+ *           description: Approval status of the movie
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *         country:
  *           type: string
  *           description: Production country
@@ -71,4 +85,38 @@
  *           type: string
  *           format: date-time
  *           description: Record last update timestamp
+<<<<<<< HEAD
+=======
+ *         createdBy:
+ *           type: string
+ *           description: ID of the staff member who created the movie
+ *         approvedBy:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the manager who approved/rejected the movie
+ *         rejectionReason:
+ *           type: string
+ *           nullable: true
+ *           description: Reason for rejection if status is rejected
+ *         isActive:
+ *           type: boolean
+ *           default: true
+ *           description: Soft delete flag
+ *         producer:
+ *           type: string
+ *           description: Movie producer/production company
+ *           example: "Jungka Bangkok"
+ *         directors:
+ *           type: array
+ *           description: List of movie directors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Wutthiphong Sukanin"]
+ *         actors:
+ *           type: array
+ *           description: List of movie actors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Kittikun Chattongkum", "Paween Purijitpanya"]
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  */

@@ -20,9 +20,15 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     role: {
+<<<<<<< HEAD
       type: String,
       enum: ["member", "staff", "manager", "admin"],
       default: "member",
+=======
+        type: String,
+        enum: ['member', 'staff', 'manager', 'admin'],
+        default: 'member'
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
     },
     status: {
       type: Boolean,
