@@ -1,15 +1,25 @@
 const Movie = require('../models/Movie');
+<<<<<<< HEAD
+=======
 const ApprovalRequest = require('../models/ApprovalRequest');
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
 const { uploadImage } = require('../services/uploadService');
 
 
 const getAllMovies = async (req, res) => {
     try {
         const { genre, status, showingStatus } = req.query;
+<<<<<<< HEAD
+        let query = {};
+        
+        if (genre) query.genre = genre;
+        if (status !== undefined) query.status = status === 'true';
+=======
         let query = { isActive: true }; 
         
         if (genre) query.genre = genre;
         if (status) query.status = status;
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         if (showingStatus) query.showingStatus = showingStatus;
 
         const movies = await Movie.find(query)
@@ -32,18 +42,25 @@ const getAllMovies = async (req, res) => {
 
 const getMovieById = async (req, res) => {
     try {
+<<<<<<< HEAD
+        const movie = await Movie.findById(req.params.id);
+=======
         const movie = await Movie.findOne({
             _id: req.params.id,
             isActive: true 
         });
 
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         if (!movie) {
             return res.status(404).json({
                 success: false,
                 message: 'Movie not found'
             });
         }
+<<<<<<< HEAD
+=======
 
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         res.status(200).json({
             success: true,
             message: 'Get movie successfully',
@@ -61,6 +78,27 @@ const getMovieById = async (req, res) => {
 const createMovie = async (req, res) => {
     try {
         const { 
+<<<<<<< HEAD
+            title, 
+            description, 
+            genre, 
+            duration, 
+            releaseDate, 
+            country, 
+            trailerUrl,
+            showingStatus 
+        } = req.body;
+
+        // Check required fields
+        if (!title || !description || !genre || !duration || !releaseDate || !country) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if poster file exists
+=======
             title, description, genre, duration, 
             releaseDate, country, trailerUrl, showingStatus,
             producer, directors, actors  // Thêm các trường mới
@@ -77,6 +115,7 @@ const createMovie = async (req, res) => {
             }
         }
 
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -84,6 +123,11 @@ const createMovie = async (req, res) => {
             });
         }
 
+<<<<<<< HEAD
+        // Upload poster to cloud
+        const posterUrl = await uploadImage(req.file);
+
+=======
         // Validate các trường mới
         if (!producer || !directors || !directors.length || !actors || !actors.length) {
             return res.status(400).json({
@@ -95,11 +139,19 @@ const createMovie = async (req, res) => {
         const posterUrl = await uploadImage(req.file);
 
         // Tạo movie với validated data
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         const movie = await Movie.create({
             title,
             description,
             genre,
             duration: Number(duration),
+<<<<<<< HEAD
+            posterUrl, // Chỉ lấy từ file upload
+            trailerUrl,
+            releaseDate,
+            country,
+            showingStatus: showingStatus || 'coming-soon'
+=======
             posterUrl,
             trailerUrl,
             releaseDate,
@@ -119,11 +171,16 @@ const createMovie = async (req, res) => {
             requestData: movie.toObject(),
             referenceId: movie._id,
             status: 'pending'
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         });
 
         res.status(201).json({
             success: true,
+<<<<<<< HEAD
+            message: 'Create film successfully',
+=======
             message: 'Movie created and pending approval',
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
             data: movie
         });
     } catch (error) {
@@ -133,6 +190,10 @@ const createMovie = async (req, res) => {
                 message: Object.values(error.errors).map(err => err.message).join(', ')
             });
         }
+<<<<<<< HEAD
+
+=======
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         res.status(500).json({
             success: false,
             message: error.message
@@ -143,8 +204,24 @@ const createMovie = async (req, res) => {
 // Update movie
 const updateMovie = async (req, res) => {
     try {
+<<<<<<< HEAD
+        const updateData = { ...req.body };
+
+        // Chỉ update poster nếu có file mới
+        if (req.file) {
+            updateData.posterUrl = await uploadImage(req.file);
+        }
+
+        const movie = await Movie.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+=======
         const movie = await Movie.findById(req.params.id);
         
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         if (!movie) {
             return res.status(404).json({
                 success: false,
@@ -152,6 +229,12 @@ const updateMovie = async (req, res) => {
             });
         }
 
+<<<<<<< HEAD
+        res.status(200).json({
+            success: true,
+            message: 'Update movie successfully',
+            data: movie
+=======
         const updateData = { ...req.body };
         if (req.file) {
             updateData.posterUrl = await uploadImage(req.file);
@@ -200,6 +283,7 @@ const updateMovie = async (req, res) => {
                 'Movie updated successfully' : 
                 'Movie update submitted for approval',
             data: updatedMovie
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
         });
     } catch (error) {
         res.status(500).json({
@@ -214,7 +298,11 @@ const deleteMovie = async (req, res) => {
     try {
         const movie = await Movie.findByIdAndUpdate(
             req.params.id,
+<<<<<<< HEAD
+            { status: false },
+=======
             { isActive: false },
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
             { new: true }
         );
 
@@ -237,7 +325,11 @@ const deleteMovie = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
+// Helper function to validate URL
+=======
 
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
 const isValidUrl = (string) => {
     try {
         new URL(string);

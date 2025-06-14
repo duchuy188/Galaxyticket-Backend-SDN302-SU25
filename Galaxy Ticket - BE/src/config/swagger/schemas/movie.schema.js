@@ -12,10 +12,13 @@
  *         - releaseDate
  *         - country
  *         - posterUrl
+<<<<<<< HEAD
+=======
  *         - createdBy
  *         - producer
  *         - directors
  *         - actors
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *       properties:
  *         title:
  *           type: string
@@ -54,10 +57,16 @@
  *           description: Movie release date
  *           example: "2024-03-27"
  *         status:
+<<<<<<< HEAD
+ *           type: boolean
+ *           description: Movie status (active/inactive)
+ *           default: true
+=======
  *           type: string
  *           enum: ['pending', 'approved', 'rejected']
  *           default: 'pending'
  *           description: Approval status of the movie
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *         country:
  *           type: string
  *           description: Production country
@@ -76,6 +85,8 @@
  *           type: string
  *           format: date-time
  *           description: Record last update timestamp
+<<<<<<< HEAD
+=======
  *         createdBy:
  *           type: string
  *           description: ID of the staff member who created the movie
@@ -107,4 +118,5 @@
  *           items:
  *             type: string
  *           example: ["Pae Arak Amornsupasiri", "Kittikun Chattongkum", "Paween Purijitpanya"]
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  */

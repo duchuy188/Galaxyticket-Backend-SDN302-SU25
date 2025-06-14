@@ -20,9 +20,14 @@
  *       - in: query
  *         name: status
  *         schema:
+<<<<<<< HEAD
+ *           type: boolean
+ *         description: Filter by status
+=======
  *           type: string
  *           enum: ['pending', 'approved', 'rejected']
  *         description: Filter by approval status
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *       - in: query
  *         name: showingStatus
  *         schema:
@@ -31,9 +36,19 @@
  *         description: Filter by showing status
  *     responses:
  *       200:
+<<<<<<< HEAD
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Movie'
+=======
  *         description: |
  *           For public: Returns only approved movies
  *           For staff/managers: Returns all movies with status
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *   
  *   post:
  *     summary: Create a new movie
@@ -73,6 +88,8 @@
  *                 type: string
  *                 enum: ['coming-soon', 'now-showing', 'ended']
  *                 description: Movie showing status
+<<<<<<< HEAD
+=======
  *               createdBy:
  *                 type: string
  *                 required: true
@@ -90,6 +107,7 @@
  *                 items:
  *                   type: string
  *                 description: List of movie actors
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *             required:
  *               - title
  *               - description
@@ -98,12 +116,18 @@
  *               - releaseDate
  *               - country
  *               - poster
+<<<<<<< HEAD
+ *     responses:
+ *       201:
+ *         description: Movie created successfully
+=======
  *               - producer
  *               - directors
  *               - actors
  *     responses:
  *       201:
  *         description: Movie created and pending approval
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *       400:
  *         description: Invalid data
  *
@@ -139,6 +163,18 @@
  *     requestBody:
  *       required: true
  *       content:
+<<<<<<< HEAD
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Movie'
+ *     responses:
+ *       200:
+ *         description: Update successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Movie'
+=======
  *         multipart/form-data:
  *           schema:
  *             type: object
@@ -180,6 +216,7 @@
  *         description: |
  *           If updating pending/rejected movie: Updated successfully
  *           If updating approved movie: Update submitted for approval
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *       404:
  *         description: Movie not found
  *

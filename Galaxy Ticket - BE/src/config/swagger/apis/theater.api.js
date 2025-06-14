@@ -23,6 +23,11 @@
  *         content:
  *           application/json:
  *             schema:
+<<<<<<< HEAD
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Theater'
+=======
  *               type: object
  *               properties:
  *                 success:
@@ -32,6 +37,7 @@
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Theater'
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *   
  *   post:
  *     summary: Create a new theater
@@ -48,6 +54,11 @@
  *         content:
  *           application/json:
  *             schema:
+<<<<<<< HEAD
+ *               $ref: '#/components/schemas/Theater'
+ *       400:
+ *         description: Invalid data
+=======
  *               type: object
  *               properties:
  *                 success:
@@ -71,6 +82,7 @@
  *                 message:
  *                   type: string
  *                   example: Phone number already exists
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *
  * /api/theaters/{id}:
  *   get:
@@ -88,6 +100,11 @@
  *         content:
  *           application/json:
  *             schema:
+<<<<<<< HEAD
+ *               $ref: '#/components/schemas/Theater'
+ *       404:
+ *         description: Theater not found
+=======
  *               type: object
  *               properties:
  *                 success:
@@ -108,6 +125,7 @@
  *                 message:
  *                   type: string
  *                   example: Theater not found
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *   
  *   put:
  *     summary: Update theater information
@@ -130,6 +148,14 @@
  *         content:
  *           application/json:
  *             schema:
+<<<<<<< HEAD
+ *               $ref: '#/components/schemas/Theater'
+ *       404:
+ *         description: Theater not found
+ *
+ *   delete:
+ *     summary: Delete a theater
+=======
  *               type: object
  *               properties:
  *                 success:
@@ -156,6 +182,7 @@
  *
  *   delete:
  *     summary: Delete a theater (soft delete)
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  *     tags: [Theaters]
  *     parameters:
  *       - in: path
@@ -166,6 +193,10 @@
  *     responses:
  *       200:
  *         description: Delete successful
+<<<<<<< HEAD
+ *       404:
+ *         description: Theater not found
+=======
  *         content:
  *           application/json:
  *             schema:
@@ -190,4 +221,5 @@
  *                 message:
  *                   type: string
  *                   example: Theater not found
+>>>>>>> 2bc10c14e6a88c5905d9d713f4f3832713cbcb85
  */

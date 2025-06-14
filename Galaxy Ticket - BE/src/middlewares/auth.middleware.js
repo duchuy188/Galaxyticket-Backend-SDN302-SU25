@@ -28,3 +28,35 @@ exports.authorizeRoles = (...roles) => {
     next();
   };
 };
+
+exports.verifyToken = (req, res, next) => {
+  console.log("Verifying token...");
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.log("No token or invalid format");
+    return res.status(401).json({ message: "Token không hợp lệ hoặc thiếu" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Token decoded:", decoded);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Token không hợp lệ hoặc hết hạn" });
+  }
+};
+
+exports.requireRole = (role) => {
+  return (req, res, next) => {
+    console.log(" requireRole middleware running");
+    if (req.user.role !== role) {
+      return res.status(403).json({ message: "Không có quyền truy cập." });
+    }
+    console.log("Role check passed");
+    next();
+  };
+};
