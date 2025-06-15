@@ -11,6 +11,11 @@ const screeningSchema = new mongoose.Schema({
         ref: 'Room',
         required: true
     },
+    theaterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Theater',
+        required: true
+    },
     startTime: {
         type: Date,
         required: true
@@ -19,7 +24,7 @@ const screeningSchema = new mongoose.Schema({
         type: Date,
         required: true,
         validate: {
-            validator: function(value) {
+            validator: function (value) {
                 return this.startTime && value > this.startTime;
             },
             message: 'Thời gian kết thúc phải sau thời gian bắt đầu'

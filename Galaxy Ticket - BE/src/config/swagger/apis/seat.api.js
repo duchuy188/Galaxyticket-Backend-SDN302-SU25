@@ -34,6 +34,52 @@
 
 /**
  * @swagger
+ * /api/seats/create-bulk:
+ *   post:
+ *     summary: Tạo một hoặc nhiều ghế cho suất chiếu
+ *     tags: [Seats]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - screeningId
+ *               - seats
+ *             properties:
+ *               screeningId:
+ *                 type: string
+ *                 description: ID của suất chiếu
+ *               seats:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Danh sách số ghế cần tạo
+ *                 example: ["A1", "A2", "B1", "B2"]
+ *     responses:
+ *       201:
+ *         description: Tạo ghế thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Seats created successfully"
+ *                 seats:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Seat'
+ *       400:
+ *         description: Dữ liệu không hợp lệ hoặc ghế đã tồn tại
+ *       500:
+ *         description: Lỗi server
+ */
+
+/**
+ * @swagger
  * /api/seats/reserve:
  *   post:
  *     summary: Đặt giữ ghế
