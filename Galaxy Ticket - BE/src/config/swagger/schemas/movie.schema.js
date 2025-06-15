@@ -12,6 +12,10 @@
  *         - releaseDate
  *         - country
  *         - posterUrl
+ *         - createdBy
+ *         - producer
+ *         - directors
+ *         - actors
  *       properties:
  *         title:
  *           type: string
@@ -25,7 +29,7 @@
  *           type: string
  *           description: Movie genre
  *           enum: [
- *             'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy', 
+ *             'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
  *             'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
  *             'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
  *             'Sports', 'Biography'
@@ -50,9 +54,10 @@
  *           description: Movie release date
  *           example: "2024-03-27"
  *         status:
- *           type: boolean
- *           description: Movie status (active/inactive)
- *           default: true
+ *           type: string
+ *           enum: ['pending', 'approved', 'rejected']
+ *           default: 'pending'
+ *           description: Approval status of the movie
  *         country:
  *           type: string
  *           description: Production country
@@ -71,4 +76,35 @@
  *           type: string
  *           format: date-time
  *           description: Record last update timestamp
+ *         createdBy:
+ *           type: string
+ *           description: ID of the staff member who created the movie
+ *         approvedBy:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the manager who approved/rejected the movie
+ *         rejectionReason:
+ *           type: string
+ *           nullable: true
+ *           description: Reason for rejection if status is rejected
+ *         isActive:
+ *           type: boolean
+ *           default: true
+ *           description: Soft delete flag
+ *         producer:
+ *           type: string
+ *           description: Movie producer/production company
+ *           example: "Jungka Bangkok"
+ *         directors:
+ *           type: array
+ *           description: List of movie directors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Wutthiphong Sukanin"]
+ *         actors:
+ *           type: array
+ *           description: List of movie actors
+ *           items:
+ *             type: string
+ *           example: ["Pae Arak Amornsupasiri", "Kittikun Chattongkum", "Paween Purijitpanya"]
  */

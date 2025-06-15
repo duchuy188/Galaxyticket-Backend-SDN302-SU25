@@ -26,7 +26,7 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Theater'
- *   
+ *
  *   post:
  *     summary: Create a new theater
  *     tags: [Theaters]
@@ -65,7 +65,7 @@
  *               $ref: '#/components/schemas/Theater'
  *       404:
  *         description: Theater not found
- *   
+ *
  *   put:
  *     summary: Update theater information
  *     tags: [Theaters]

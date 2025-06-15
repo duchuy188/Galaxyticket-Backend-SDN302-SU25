@@ -37,7 +37,7 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Movie'
- *   
+ *
  *   post:
  *     summary: Create a new movie
  *     tags: [Movies]
@@ -109,7 +109,7 @@
  *               $ref: '#/components/schemas/Movie'
  *       404:
  *         description: Movie not found
- *   
+ *
  *   put:
  *     summary: Update movie information
  *     tags: [Movies]
