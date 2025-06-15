@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const seatController = require('../controllers/seatController');
 
+// Create seats (single or multiple)
+router.post('/create-bulk', seatController.createBulkSeats);
+
 // Reserve a seat
 router.post('/reserve', seatController.reserveSeat);
 

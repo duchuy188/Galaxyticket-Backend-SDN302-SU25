@@ -16,6 +16,9 @@
  *         roomId:
  *           type: string
  *           description: ID phòng chiếu
+ *         theaterId:
+ *           type: string
+ *           description: ID rạp chiếu
  *         startTime:
  *           type: string
  *           format: date-time
@@ -55,6 +58,7 @@
  *       required:
  *         - movieId
  *         - roomId
+ *         - theaterId
  *         - startTime
  *         - endTime
  *         - ticketPrice
@@ -63,6 +67,8 @@
  *         movieId:
  *           type: string
  *         roomId:
+ *           type: string
+ *         theaterId:
  *           type: string
  *         startTime:
  *           type: string
@@ -80,6 +86,8 @@
  *         movieId:
  *           type: string
  *         roomId:
+ *           type: string
+ *         theaterId:
  *           type: string
  *         startTime:
  *           type: string

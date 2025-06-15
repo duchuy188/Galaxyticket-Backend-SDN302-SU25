@@ -29,7 +29,7 @@
  *           type: string
  *           description: Movie genre
  *           enum: [
- *             'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy', 
+ *             'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
  *             'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
  *             'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
  *             'Sports', 'Biography'

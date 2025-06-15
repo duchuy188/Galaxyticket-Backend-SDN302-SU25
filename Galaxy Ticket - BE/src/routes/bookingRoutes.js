@@ -6,7 +6,7 @@ const bookingController = require('../controllers/bookingController');
 router.post('/', bookingController.createBooking);
 
 // Cancel a booking
-router.put('/:bookingId/cancel', bookingController.cancelBooking);
+router.post('/:bookingId/cancel', bookingController.cancelBooking);
 
 // Update a booking
 router.put('/:bookingId', bookingController.updateBooking);
