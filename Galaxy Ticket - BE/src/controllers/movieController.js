@@ -157,13 +157,27 @@ const updateMovie = async (req, res) => {
             updateData.posterUrl = await uploadImage(req.file);
         }
 
-        
-        if (movie.status === 'approved') {
-          
-            updateData.status = 'pending';
-            updateData.approvedBy = null;
-            updateData.rejectionReason = null;
+        // Kiểm tra tính hợp lệ của showingStatus
+        if (updateData.showingStatus) {
+            const currentStatus = movie.showingStatus;
+            const newStatus = updateData.showingStatus;
+            
+            const validTransitions = {
+                'coming-soon': ['now-showing'],   
+                'now-showing': ['ended'],         
+                'ended': []                       
+            };
 
+            if (!validTransitions[currentStatus]?.includes(newStatus)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Cannot change status from '${currentStatus}' to '${newStatus}'`
+                });
+            }
+        }
+
+        // Nếu phim đã approved
+        if (movie.status === 'approved') {
             // Tạo approval request mới
             await ApprovalRequest.create({
                 staffId: movie.createdBy,
@@ -172,22 +186,15 @@ const updateMovie = async (req, res) => {
                 referenceId: movie._id,
                 status: 'pending'
             });
-        } else if (movie.status === 'rejected') {
-           
-            updateData.status = 'pending';
-            updateData.rejectionReason = null;
 
-        
-            await ApprovalRequest.create({
-                staffId: movie.createdBy,
-                type: 'movie',
-                requestData: { ...movie.toObject(), ...updateData },
-                referenceId: movie._id,
-                status: 'pending'
+            return res.status(200).json({
+                success: true,
+                message: 'Update request has been submitted and waiting for approval',
+                data: movie // Trả về phim gốc
             });
         }
-       
 
+        // Nếu phim chưa approved, update trực tiếp
         const updatedMovie = await Movie.findByIdAndUpdate(
             req.params.id,
             updateData,
@@ -196,9 +203,7 @@ const updateMovie = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: movie.status === 'pending' ? 
-                'Movie updated successfully' : 
-                'Movie update submitted for approval',
+            message: 'Movie updated successfully',
             data: updatedMovie
         });
     } catch (error) {
