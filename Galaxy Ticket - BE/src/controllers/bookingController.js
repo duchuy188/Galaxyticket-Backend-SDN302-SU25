@@ -1,15 +1,16 @@
 const Booking = require('../models/Booking');
 const Screening = require('../models/Screening');
 const Seat = require('../models/Seat');
+const Promotion = require('../models/Promotion');
 const mongoose = require('mongoose');
 
 // Create a new booking
 exports.createBooking = async (req, res) => {
     try {
-        const { userId, screeningId, seatIds, promotionId } = req.body;
+        const { userId, screeningId, seatNumbers, code } = req.body;
 
         // Validate required fields
-        if (!userId || !screeningId || !seatIds) {
+        if (!userId || !screeningId || !seatNumbers) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -20,15 +21,19 @@ exports.createBooking = async (req, res) => {
         }
 
         // Validate if seats are available
-        const seats = await Seat.find({ _id: { $in: seatIds } });
-        if (seats.length !== seatIds.length) {
+        const seats = await Seat.find({
+            screeningId,
+            seatNumber: { $in: seatNumbers }
+        });
+
+        if (seats.length !== seatNumbers.length) {
             return res.status(400).json({ message: 'One or more seats not found' });
         }
 
         // Check if seats are already booked
         const existingBookings = await Booking.find({
             screeningId,
-            seatIds: { $in: seatIds },
+            seatNumbers: { $in: seatNumbers },
             paymentStatus: { $in: ['pending', 'paid'] }
         });
 
@@ -37,33 +42,39 @@ exports.createBooking = async (req, res) => {
         }
 
         // Calculate total price based on screening's ticketPrice and number of seats
-        const totalPrice = screening.ticketPrice * seatIds.length;
+        let totalPrice = screening.ticketPrice * seatNumbers.length;
 
         const bookingData = {
             userId,
             screeningId,
-            seatIds,
+            seatNumbers,
             totalPrice,
             paymentStatus: 'pending'
-        };
+        }
 
-        // Handle promotionId
-        if (promotionId !== undefined && promotionId !== null) {
-            // Special case: if promotionId is "string", treat it as no promotion
-            if (promotionId === "string") {
-                // Do nothing, continue without promotionId
+        // Handle promotion code
+        if (code !== undefined && code !== null && code.trim() !== '') {
+            const promotionCode = code.trim().toUpperCase();
+            const promotion = await Promotion.findOne({
+                code: promotionCode,
+                isActive: true,
+                status: 'approved',
+                startDate: { $lte: new Date() },
+                endDate: { $gte: new Date() }
+            });
+
+            if (!promotion) {
+                return res.status(400).json({ message: 'Mã khuyến mãi không hợp lệ' });
             }
-            // If promotionId is empty string or just whitespace, ignore it
-            else if (typeof promotionId === 'string' && promotionId.trim() === '') {
-                // Do nothing, continue without promotionId
+
+            bookingData.code = promotionCode;
+            // Apply discount based on promotion type
+            if (promotion.type === 'percent') {
+                totalPrice = totalPrice * (1 - promotion.value / 100);
+            } else if (promotion.type === 'fixed') {
+                totalPrice = Math.max(0, totalPrice - promotion.value);
             }
-            // If promotionId is provided, validate it
-            else if (typeof promotionId === 'string') {
-                if (!mongoose.Types.ObjectId.isValid(promotionId)) {
-                    return res.status(400).json({ message: 'Invalid promotion ID format' });
-                }
-                bookingData.promotionId = promotionId;
-            }
+            bookingData.totalPrice = totalPrice;
         }
 
         const booking = new Booking(bookingData);
@@ -81,18 +92,17 @@ exports.cancelBooking = async (req, res) => {
         const booking = await Booking.findById(bookingId);
 
         if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
+            return res.status(404).json({ message: 'Không tìm thấy đặt vé' });
         }
 
         // Only allow cancellation of pending bookings
         if (booking.paymentStatus !== 'pending') {
-            return res.status(400).json({ message: 'Can only cancel pending bookings' });
+            return res.status(400).json({ message: 'Chỉ có thể hủy đặt vé đang chờ thanh toán' });
         }
 
-        booking.paymentStatus = 'failed';
+        booking.paymentStatus = 'cancelled';
         await booking.save();
-
-        res.json({ message: 'Booking cancelled successfully' });
+        res.json({ message: 'Hủy đặt vé thành công' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -102,7 +112,7 @@ exports.cancelBooking = async (req, res) => {
 exports.updateBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
-        const { seatIds, totalPrice, promotionId } = req.body;
+        const { seatNumbers, code } = req.body;
 
         const booking = await Booking.findById(bookingId);
         if (!booking) {
@@ -114,16 +124,20 @@ exports.updateBooking = async (req, res) => {
             return res.status(400).json({ message: 'Can only update pending bookings' });
         }
 
-        // If updating seats, validate availability
-        if (seatIds) {
-            const seats = await Seat.find({ _id: { $in: seatIds } });
-            if (seats.length !== seatIds.length) {
+        // If updating seats, validate availability and recalculate totalPrice
+        if (seatNumbers) {
+            const seats = await Seat.find({
+                screeningId: booking.screeningId,
+                seatNumber: { $in: seatNumbers }
+            });
+
+            if (seats.length !== seatNumbers.length) {
                 return res.status(400).json({ message: 'One or more seats not found' });
             }
 
             const existingBookings = await Booking.find({
                 screeningId: booking.screeningId,
-                seatIds: { $in: seatIds },
+                seatNumbers: { $in: seatNumbers },
                 _id: { $ne: bookingId },
                 paymentStatus: { $in: ['pending', 'paid'] }
             });
@@ -132,20 +146,77 @@ exports.updateBooking = async (req, res) => {
                 return res.status(400).json({ message: 'One or more seats are already booked' });
             }
 
-            booking.seatIds = seatIds;
+            booking.seatNumbers = seatNumbers;
+
+            // Recalculate totalPrice if seatNumbers are updated
+            const screening = await Screening.findById(booking.screeningId);
+            if (screening) {
+                let newTotalPrice = screening.ticketPrice * seatNumbers.length;
+
+                // Reapply promotion if exists
+                if (booking.code) {
+                    const promotion = await Promotion.findOne({
+                        code: booking.code,
+                        isActive: true,
+                        status: 'approved',
+                        startDate: { $lte: new Date() },
+                        endDate: { $gte: new Date() }
+                    });
+
+                    if (promotion) {
+                        if (promotion.type === 'percent') {
+                            newTotalPrice = newTotalPrice * (1 - promotion.value / 100);
+                        } else if (promotion.type === 'fixed') {
+                            newTotalPrice = Math.max(0, newTotalPrice - promotion.value);
+                        }
+                    }
+                }
+
+                booking.totalPrice = newTotalPrice;
+            } else {
+                return res.status(500).json({ message: 'Screening not found for booking' });
+            }
         }
 
-        if (totalPrice !== undefined) {
-            booking.totalPrice = totalPrice;
-        }
+        if (code !== undefined) {
+            const newCode = code ? code.trim().toUpperCase() : null;
+            if (newCode !== booking.code) {
+                booking.code = newCode;
 
-        if (promotionId !== undefined) {
-            booking.promotionId = promotionId;
+                // Recalculate price with new promotion code
+                const screening = await Screening.findById(booking.screeningId);
+                if (screening) {
+                    let newTotalPrice = screening.ticketPrice * booking.seatNumbers.length;
+
+                    if (newCode) {
+                        const promotion = await Promotion.findOne({
+                            code: newCode,
+                            isActive: true,
+                            status: 'approved',
+                            startDate: { $lte: new Date() },
+                            endDate: { $gte: new Date() }
+                        });
+
+                        if (promotion) {
+                            if (promotion.type === 'percent') {
+                                newTotalPrice = newTotalPrice * (1 - promotion.value / 100);
+                            } else if (promotion.type === 'fixed') {
+                                newTotalPrice = Math.max(0, newTotalPrice - promotion.value);
+                            }
+                        } else {
+                            return res.status(400).json({ message: 'Mã khuyến mãi không hợp lệ' });
+                        }
+                    }
+
+                    booking.totalPrice = newTotalPrice;
+                }
+            }
         }
 
         await booking.save();
         res.json(booking);
     } catch (error) {
+        console.error('Update booking error:', error);
         res.status(500).json({ message: error.message });
     }
-}; 
+};
