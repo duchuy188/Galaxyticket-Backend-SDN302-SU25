@@ -13,7 +13,25 @@ const options = {
         url: 'http://localhost:5000',
         description: 'Development server',
       },
+      {
+        url: 'https://galaxyticket-backend-sdn302-su25.onrender.com',
+        description: 'Production server',
+      },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
   },
   apis: [
     './src/routes/*.js',
