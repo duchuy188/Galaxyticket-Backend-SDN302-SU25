@@ -5,7 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swagger/swagger");
+const { swaggerSpec, swaggerUiOptions } = require("./config/swagger/swagger");
 const swaggerAuth = require("./middlewares/swaggerAuth.middleware");
 const screeningRoutes = require("./routes/screeningRoutes");
 
@@ -37,7 +37,7 @@ app.use(
   "/api-docs",
   swaggerAuth,
   swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec)
+  swaggerUi.setup(swaggerSpec, swaggerUiOptions)
 );
 
 // Basic route

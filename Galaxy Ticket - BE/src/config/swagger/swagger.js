@@ -1,6 +1,6 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 
-const options = {
+const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
@@ -10,13 +10,15 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
-        description: 'Development server',
+        url: process.env.NODE_ENV === 'production'
+          ? 'https://galaxyticket-backend-sdn302-su25.onrender.com'  
+          : `http://localhost:${process.env.PORT || 5000}`,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
       {
-        url: 'https://galaxyticket-backend-sdn302-su25.onrender.com',
-        description: 'Production server',
-      },
+        url: `http://localhost:${process.env.PORT || 5000}`,
+        description: 'Local development server',
+      }
     ],
     components: {
       securitySchemes: {
@@ -24,8 +26,8 @@ const options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-        }
-      }
+        },
+      },
     },
     security: [
       {
@@ -40,5 +42,15 @@ const options = {
   ],
 };
 
-const swaggerSpec = swaggerJsdoc(options);
-module.exports = swaggerSpec;
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+const swaggerUiOptions = {
+  swaggerOptions: {
+    persistAuthorization: true
+  }
+};
+
+module.exports = {
+  swaggerSpec,
+  swaggerUiOptions
+};
