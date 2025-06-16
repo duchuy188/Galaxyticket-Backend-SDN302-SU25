@@ -1,4 +1,5 @@
 const Movie = require("../models/Movie");
+const ApprovalRequest = require("../models/ApprovalRequest");
 const { uploadImage } = require("../services/uploadService");
 
 const getAllMovies = async (req, res) => {
@@ -175,8 +176,21 @@ const updateMovie = async (req, res) => {
             data: movie // Trả về phim gốc
         });
     }
+ 
+    if (movie.status === 'rejected') {
+        updateData.status = 'pending';
+        updateData.rejectionReason = null;
+        
+        await ApprovalRequest.create({
+            staffId: movie.createdBy,
+            type: 'movie',
+            requestData: { ...movie.toObject(), ...updateData },
+            referenceId: movie._id,
+            status: 'pending'
+        });
+    }
 
-    // Nếu phim chưa approved, update trực tiếp
+ 
     const updatedMovie = await Movie.findByIdAndUpdate(
         req.params.id,
         updateData,
