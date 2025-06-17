@@ -19,14 +19,13 @@
  *         address:
  *           type: string
  *           description: Theater address
- *           minLength: 10
- *           maxLength: 200
- *           example: "116 Nguyen Du Street, District 1, HCMC"
  *         phone:
  *           type: string
- *           description: Theater phone number (10 digits, starts with 0)
- *           pattern: "^0[0-9]{9}$"
+ *           description: Theater phone number (10 digits)
+ *           pattern: "^[0-9]{10}$"
  *           example: "0283334444"
+ *           minLength: 10
+ *           maxLength: 200
  *         description:
  *           type: string
  *           description: Detailed description of the theater

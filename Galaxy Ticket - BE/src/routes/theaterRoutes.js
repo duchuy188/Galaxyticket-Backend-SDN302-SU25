@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticate, authorizeRoles } = require("../middlewares/auth.middleware");
 const {
     getAllTheaters,
     getTheaterById,
@@ -10,9 +11,16 @@ const {
 
 
 router.get('/', getAllTheaters);
-router.post('/', createTheater);
+
 router.get('/:id', getTheaterById);
-router.put('/:id', updateTheater);
-router.delete('/:id', deleteTheater);
+
+
+router.post('/', authenticate, authorizeRoles("staff"), createTheater);
+
+
+router.put('/:id', authenticate, authorizeRoles("staff"), updateTheater);
+
+
+router.delete('/:id', authenticate, authorizeRoles("manager","staff"), deleteTheater);
 
 module.exports = router;

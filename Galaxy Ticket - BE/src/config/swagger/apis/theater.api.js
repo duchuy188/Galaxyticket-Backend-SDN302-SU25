@@ -23,16 +23,10 @@
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Theater'
- *   
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Theater'
+ *
  *   post:
  *     summary: Create a new theater
  *     tags: [Theaters]
@@ -48,29 +42,9 @@
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Theater created successfully
- *                 data:
- *                   $ref: '#/components/schemas/Theater'
+ *               $ref: '#/components/schemas/Theater'
  *       400:
  *         description: Invalid data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Phone number already exists
  *
  * /api/theaters/{id}:
  *   get:
@@ -88,27 +62,10 @@
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/Theater'
+ *               $ref: '#/components/schemas/Theater'
  *       404:
  *         description: Theater not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Theater not found
- *   
+ *
  *   put:
  *     summary: Update theater information
  *     tags: [Theaters]
@@ -130,32 +87,12 @@
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Theater updated successfully
- *                 data:
- *                   $ref: '#/components/schemas/Theater'
+ *               $ref: '#/components/schemas/Theater'
  *       404:
  *         description: Theater not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Theater not found
  *
  *   delete:
- *     summary: Delete a theater (soft delete)
+ *     summary: Delete a theater
  *     tags: [Theaters]
  *     parameters:
  *       - in: path
@@ -166,28 +103,6 @@
  *     responses:
  *       200:
  *         description: Delete successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Theater deleted successfully
  *       404:
  *         description: Theater not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Theater not found
  */

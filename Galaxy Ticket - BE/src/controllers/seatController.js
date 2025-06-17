@@ -1,6 +1,56 @@
 const Seat = require('../models/Seat');
 const mongoose = require('mongoose');
 
+// Create seats (single or multiple)
+exports.createBulkSeats = async (req, res) => {
+    try {
+        const { screeningId, seats } = req.body;
+
+        // Validate screeningId format
+        if (!mongoose.Types.ObjectId.isValid(screeningId)) {
+            return res.status(400).json({ message: 'Invalid screening ID format' });
+        }
+
+        // Validate seats array
+        if (!Array.isArray(seats)) {
+            return res.status(400).json({ message: 'Seats must be an array' });
+        }
+
+        // Remove any duplicate seat numbers
+        const uniqueSeats = [...new Set(seats)];
+
+        // Prepare seats data
+        const seatsData = uniqueSeats.map(seatNumber => ({
+            screeningId,
+            seatNumber,
+            status: 'available'
+        }));
+
+        // Insert all seats
+        const createdSeats = await Seat.insertMany(seatsData, {
+            ordered: false // Continue inserting even if some documents fail
+        });
+
+        res.status(201).json({
+            message: createdSeats.length === 1 ? 'Seat created successfully' : 'Seats created successfully',
+            seats: createdSeats
+        });
+    } catch (error) {
+        // Handle duplicate key errors
+        if (error.code === 11000) {
+            return res.status(400).json({
+                message: 'Some seats already exist for this screening',
+                error: error.message
+            });
+        }
+
+        res.status(500).json({
+            message: 'Error creating seats',
+            error: error.message
+        });
+    }
+};
+
 // Reserve a seat
 exports.reserveSeat = async (req, res) => {
     try {

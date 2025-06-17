@@ -3,6 +3,7 @@ const ApprovalRequest = require('../models/ApprovalRequest');
 require('../models/User');
 require('../models/Movie');
 require('../models/Room');
+require('../models/Theater');
 
 // Lấy tất cả suất chiếu
 exports.getAllScreenings = async (req, res) => {
@@ -22,6 +23,8 @@ exports.getAllScreenings = async (req, res) => {
             data: screenings,
             count: screenings.length
         });
+        const screenings = await Screening.find().populate('movieId roomId theaterId createdBy approvedBy');
+        res.json(screenings);
     } catch (err) {
         res.status(500).json({
             success: false,
@@ -50,6 +53,9 @@ exports.getScreeningById = async (req, res) => {
             message: 'Get screening successfully',
             data: screening
         });
+        const screening = await Screening.findById(req.params.id).populate('movieId roomId theaterId createdBy approvedBy');
+        if (!screening) return res.status(404).json({ message: 'Screening not found' });
+        res.json(screening);
     } catch (err) {
         res.status(500).json({
             success: false,
@@ -78,6 +84,7 @@ exports.createScreening = async (req, res) => {
         const { movieId, roomId, startTime, endTime, ticketPrice, createdBy } = req.body;
         
         // Kiểm tra trùng giờ
+        const { movieId, roomId, theaterId, startTime, endTime, ticketPrice, createdBy } = req.body;
         if (await isTimeOverlap(roomId, startTime, endTime)) {
             return res.status(400).json({ 
                 success: false,
@@ -109,6 +116,8 @@ exports.createScreening = async (req, res) => {
             success: true,
             message: 'Screening created and pending approval',
             data: screening
+        const screening = new Screening({
+            movieId, roomId, theaterId, startTime, endTime, ticketPrice, createdBy
         });
     } catch (err) {
         if (err.name === 'ValidationError') {
@@ -128,6 +137,7 @@ exports.createScreening = async (req, res) => {
 exports.updateScreening = async (req, res) => {
     try {
         const { movieId, roomId, startTime, endTime, ticketPrice } = req.body;
+        const { movieId, roomId, theaterId, startTime, endTime, ticketPrice, status, rejectionReason, approvedBy, isActive } = req.body;
         const screening = await Screening.findById(req.params.id);
         
         if (!screening) {
@@ -156,6 +166,17 @@ exports.updateScreening = async (req, res) => {
             updateData.status = 'pending';
             updateData.approvedBy = null;
             updateData.rejectionReason = null;
+        // Cập nhật các trường
+        if (movieId) screening.movieId = movieId;
+        if (roomId) screening.roomId = roomId;
+        if (theaterId) screening.theaterId = theaterId;
+        if (startTime) screening.startTime = startTime;
+        if (endTime) screening.endTime = endTime;
+        if (ticketPrice !== undefined) screening.ticketPrice = ticketPrice;
+        if (status) screening.status = status;
+        if (rejectionReason !== undefined) screening.rejectionReason = rejectionReason;
+        if (approvedBy) screening.approvedBy = approvedBy;
+        if (isActive !== undefined) screening.isActive = isActive;
 
             // Tạo approval request mới
             await ApprovalRequest.create({
@@ -263,5 +284,41 @@ exports.getScreeningsByStatus = async (req, res) => {
             success: false,
             message: err.message
         });
+    }
+};
+
+// Lấy tất cả suất chiếu theo rạp
+exports.getScreeningsByTheater = async (req, res) => {
+    try {
+        const screenings = await Screening.find({
+            theaterId: req.params.theaterId,
+            isActive: true
+        }).populate('movieId roomId theaterId createdBy approvedBy');
+
+        if (!screenings.length) {
+            return res.status(404).json({ message: 'Không tìm thấy suất chiếu nào cho rạp này' });
+        }
+
+        res.json(screenings);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// Lấy tất cả suất chiếu theo phim
+exports.getScreeningsByMovie = async (req, res) => {
+    try {
+        const screenings = await Screening.find({
+            movieId: req.params.movieId,
+            isActive: true
+        }).populate('movieId roomId theaterId createdBy approvedBy');
+
+        if (!screenings.length) {
+            return res.status(404).json({ message: 'Không tìm thấy suất chiếu nào cho phim này' });
+        }
+
+        res.json(screenings);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 };

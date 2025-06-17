@@ -55,10 +55,10 @@ const getRequestById = async (req, res) => {
 
 const updateRequest = async (req, res) => {
     try {
-        const { status, rejectionReason, managerId } = req.body;
+        const { status, rejectionReason } = req.body;
+        const managerId = req.user.userId; // Lấy managerId từ token
         const request = await ApprovalRequest.findById(req.params.id);
 
-       
         if (!request) {
             return res.status(404).json({
                 success: false,
@@ -66,7 +66,6 @@ const updateRequest = async (req, res) => {
             });
         }
 
-  
         if (request.status !== 'pending') {
             return res.status(400).json({
                 success: false,
@@ -74,11 +73,10 @@ const updateRequest = async (req, res) => {
             });
         }
 
-   
-        if (!status || !managerId) {
+        if (!status) {
             return res.status(400).json({
                 success: false,
-                message: 'Status and managerId are required'
+                message: 'Status is required'
             });
         }
 
@@ -89,7 +87,6 @@ const updateRequest = async (req, res) => {
             });
         }
 
-    
         switch(request.type) {
             case 'movie':
                 const updatedMovie = await Movie.findByIdAndUpdate(
@@ -173,10 +170,8 @@ const updateRequest = async (req, res) => {
                 });
         }
 
-
         await request.save();
 
-  
         res.status(200).json({
             success: true,
             message: `Request ${status} successfully`,

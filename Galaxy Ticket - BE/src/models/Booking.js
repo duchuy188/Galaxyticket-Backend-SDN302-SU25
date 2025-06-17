@@ -11,10 +11,10 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Screening',
         required: true
     },
-    seatIds: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Seat',
-        required: true
+    seatNumbers: [{
+        type: String,
+        required: true,
+        trim: true
     }],
     totalPrice: {
         type: Number,
@@ -24,20 +24,20 @@ const bookingSchema = new mongoose.Schema({
     paymentStatus: {
         type: String,
         required: true,
-        enum: ['pending', 'paid', 'failed'],
+        enum: ['pending', 'paid', 'failed', 'cancelled'],
         default: 'pending'
     },
-    promotionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Promotion',
+    code: {
+        type: String,
+        trim: true,
+        uppercase: true,
         default: null
     }
 }, {
-    timestamps: true  
+    timestamps: true
 });
 
-
-bookingSchema.path('seatIds').validate(function(value) {
+bookingSchema.path('seatNumbers').validate(function (value) {
     return value && value.length > 0;
 }, 'Phải chọn ít nhất 1 ghế');
 

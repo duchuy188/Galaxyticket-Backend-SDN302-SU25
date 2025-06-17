@@ -87,6 +87,8 @@
  *         description: Request not found
  *
  *   put:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Approve or reject request
  *     tags: [Approval Requests]
  *     parameters:
@@ -103,14 +105,10 @@
  *             type: object
  *             required:
  *               - status
- *               - managerId
  *             properties:
  *               status:
  *                 type: string
  *                 enum: ['approved', 'rejected']
- *               managerId:
- *                 type: string
- *                 description: ID của manager thực hiện duyệt/từ chối
  *               rejectionReason:
  *                 type: string
  *                 description: Lý do từ chối (bắt buộc khi status là rejected)

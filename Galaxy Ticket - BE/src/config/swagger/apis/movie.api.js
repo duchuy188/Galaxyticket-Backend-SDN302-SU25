@@ -7,9 +7,31 @@
 
 /**
  * @swagger
+ * /api/movies/public:
+ *   get:
+ *     summary: Get list of approved movies (public access)
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *         description: Filter by genre
+ *       - in: query
+ *         name: showingStatus
+ *         schema:
+ *           type: string
+ *           enum: ['coming-soon', 'now-showing', 'ended']
+ *         description: Filter by showing status
+ *     responses:
+ *       200:
+ *         description: Returns only approved movies
+ *
  * /api/movies:
  *   get:
- *     summary: Get list of movies
+ *     security:
+ *       - bearerAuth: []
+ *     summary: Get list of all movies (staff/manager access)
  *     tags: [Movies]
  *     parameters:
  *       - in: query
@@ -31,11 +53,11 @@
  *         description: Filter by showing status
  *     responses:
  *       200:
- *         description: |
- *           For public: Returns only approved movies
- *           For staff/managers: Returns all movies with status
+ *         description: Returns all movies with status
  *   
  *   post:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Create a new movie
  *     tags: [Movies]
  *     requestBody:
@@ -52,10 +74,11 @@
  *               genre:
  *                 type: string
  *                 enum: [
- *                   'Western', 'War', 'Family', 'Fantasy', 'Thriller', 'Comedy',
- *                   'Action', 'Crime', 'Animation', 'Horror', 'Romance', 'Historical',
- *                   'Mystery', 'Musical', 'Adventure', 'Documentary', 'Drama', 'Mythology',
- *                   'Sports', 'Biography'
+ *                   'Phim Cao Bồi', 'Phim Chiến Tranh', 'Phim Gia Đình', 'Phim Giả Tưởng', 
+ *                   'Phim Giật Gân', 'Phim Hài', 'Phim Hành Động', 'Phim Hình Sự', 
+ *                   'Phim Hoạt Hình', 'Phim Kinh Dị', 'Phim Lãng Mạn', 'Phim Lịch Sử',
+ *                   'Phim Bí Ẩn', 'Phim Âm Nhạc', 'Phim Phiêu Lưu', 'Phim Tài Liệu', 
+ *                   'Phim Chính Kịch', 'Phim Thần Thoại', 'Phim Thể Thao', 'Phim Tiểu Sử'
  *                 ]
  *               duration:
  *                 type: number
@@ -73,10 +96,6 @@
  *                 type: string
  *                 enum: ['coming-soon', 'now-showing', 'ended']
  *                 description: Movie showing status
- *               createdBy:
- *                 type: string
- *                 required: true
- *                 description: ID of the staff member creating the movie
  *               producer:
  *                 type: string
  *                 description: Movie producer/production company
@@ -109,6 +128,8 @@
  *
  * /api/movies/{id}:
  *   get:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Get movie by ID
  *     tags: [Movies]
  *     parameters:
@@ -120,14 +141,12 @@
  *     responses:
  *       200:
  *         description: Success
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Movie'
  *       404:
  *         description: Movie not found
  *   
  *   put:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Update movie information
  *     tags: [Movies]
  *     parameters:
@@ -163,8 +182,6 @@
  *                 type: string
  *               showingStatus:
  *                 type: string
- *               createdBy:
- *                 type: string
  *               producer:
  *                 type: string
  *               directors:
@@ -184,6 +201,8 @@
  *         description: Movie not found
  *
  *   delete:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Delete a movie
  *     tags: [Movies]
  *     parameters:
