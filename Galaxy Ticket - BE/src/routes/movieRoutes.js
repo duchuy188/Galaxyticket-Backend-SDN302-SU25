@@ -12,7 +12,7 @@ const {
   updateMovie,
 } = require("../controllers/movieController");
 
-// Route công khai - ai cũng xem được phim đã approved
+
 router.get("/public", updateMovieShowingStatus, async (req, res) => {
   try {
     const { genre, showingStatus } = req.query;
@@ -41,10 +41,10 @@ router.get("/public", updateMovieShowingStatus, async (req, res) => {
   }
 });
 
-// Route cho member - xem được phim đã approved
+
 router.get("/member", authenticate, authorizeRoles("member"), updateMovieShowingStatus, async (req, res) => {
   try {
-    // Chỉ hiển thị phim đã approved và đang active
+
     const movies = await Movie.find({ 
       status: "approved", 
       isActive: true 
@@ -64,15 +64,17 @@ router.get("/member", authenticate, authorizeRoles("member"), updateMovieShowing
   }
 });
 
-// Route cho staff và manager - xem được tất cả phim (kể cả pending, rejected)
-router.get("/", authenticate, authorizeRoles("staff", "manager"), updateMovieShowingStatus, getAllMovies);
-router.get("/:id", authenticate, authorizeRoles("staff", "manager"), updateMovieShowingStatus, getMovieById);
 
-// Route để tạo và cập nhật phim - chỉ staff mới được phép
+router.get("/", authenticate, authorizeRoles("staff", "manager"), updateMovieShowingStatus, getAllMovies);
+
+
+router.get("/:id", updateMovieShowingStatus, getMovieById);
+
+
 router.post("/", authenticate, authorizeRoles("staff"), upload.single("poster"), createMovie);
 router.put("/:id", authenticate, authorizeRoles("staff"), upload.single("poster"), updateMovie);
 
-// Route để xóa phim - chỉ manager mới được phép
-router.delete("/:id", authenticate, authorizeRoles("manager"), deleteMovie);
+
+router.delete("/:id", authenticate, authorizeRoles("manager","staff"), deleteMovie);
 
 module.exports = router;

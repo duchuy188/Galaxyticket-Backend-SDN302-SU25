@@ -18,7 +18,7 @@ router.get('/:id',
 );
 
 router.put('/:id', 
-  authenticate, 
+  authenticate,   
   authorizeRoles("manager"), 
   approvalRequestController.updateRequest
 );
