@@ -117,18 +117,54 @@ const updateRequest = async (req, res) => {
 
             // 6. Chuẩn bị cho tương lai khi thêm các loại request khác
             case 'promotion':
-                // TODO: Xử lý promotion approval
-                return res.status(400).json({
-                    success: false,
-                    message: 'Promotion approval not implemented yet'
-                });
+                const Promotion = require('../models/Promotion');
+                const updatedPromotion = await Promotion.findByIdAndUpdate(
+                    request.referenceId,
+                    {
+                        status: status,
+                        approvedBy: managerId,
+                        rejectionReason: status === 'rejected' ? rejectionReason : null
+                    },
+                    { new: true }
+                );
+            
+                if (!updatedPromotion) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Referenced promotion not found'
+                    });
+                }
+            
+                request.status = status;
+                request.managerId = managerId;
+                request.rejectionReason = status === 'rejected' ? rejectionReason : null;
+                request.requestData = updatedPromotion;
+                break;
 
             case 'screening':
-                // TODO: Xử lý screening approval
-                return res.status(400).json({
-                    success: false,
-                    message: 'Screening approval not implemented yet'
-                });
+                const Screening = require('../models/Screening');
+                const updatedScreening = await Screening.findByIdAndUpdate(
+                    request.referenceId,
+                    {
+                        status: status,
+                        approvedBy: managerId,
+                        rejectionReason: status === 'rejected' ? rejectionReason : null
+                    },
+                    { new: true }
+                );
+            
+                if (!updatedScreening) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Referenced screening not found'
+                    });
+                }
+            
+                request.status = status;
+                request.managerId = managerId;
+                request.rejectionReason = status === 'rejected' ? rejectionReason : null;
+                request.requestData = updatedScreening;
+                break;
 
             default:
                 return res.status(400).json({

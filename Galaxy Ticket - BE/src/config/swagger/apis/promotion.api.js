@@ -28,7 +28,35 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Promotion'
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               value:
+ *                 type: number
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *               isActive:
+ *                 type: boolean
+ *               createdBy:
+ *                 type: string
+ *             required:
+ *               - code
+ *               - name
+ *               - type
+ *               - value
+ *               - startDate
+ *               - endDate
  *     responses:
  *       201:
  *         description: Promotion đã tạo
@@ -72,7 +100,33 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Promotion'
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               value:
+ *                 type: number
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *               isActive:
+ *                 type: boolean
+ *             required:
+ *               - code
+ *               - name
+ *               - type
+ *               - value
+ *               - startDate
+ *               - endDate
  *     responses:
  *       200:
  *         description: Promotion đã cập nhật

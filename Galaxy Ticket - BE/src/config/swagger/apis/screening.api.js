@@ -26,20 +26,21 @@
  *             $ref: '#/components/schemas/ScreeningCreate'
  *     responses:
  *       201:
- *         description: Tạo thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Screening'
- *       400:
- *         description: Lỗi đầu vào hoặc trùng giờ chiếu
+ *         description: Tạo thành công và chờ phê duyệt
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Screening'
+ *       400:
+ *         description: Lỗi đầu vào hoặc trùng giờ chiếu
+ *
  * /api/screenings/{id}:
  *   get:
  *     summary: Lấy chi tiết suất chiếu theo ID
@@ -78,11 +79,20 @@
  *             $ref: '#/components/schemas/ScreeningUpdate'
  *     responses:
  *       200:
- *         description: Cập nhật thành công
+ *         description: |
+ *           Nếu cập nhật screening pending/rejected: Cập nhật thành công
+ *           Nếu cập nhật screening approved: Cập nhật đã được gửi để phê duyệt
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Screening'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Screening'
  *       400:
  *         description: Lỗi đầu vào hoặc trùng giờ chiếu
  *       404:
