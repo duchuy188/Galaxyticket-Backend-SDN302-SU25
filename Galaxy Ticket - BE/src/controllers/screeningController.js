@@ -1,7 +1,7 @@
 const Screening = require('../models/Screening');
 const ApprovalRequest = require('../models/ApprovalRequest');
+const Movie = require('../models/Movie');
 require('../models/User');
-require('../models/Movie');
 require('../models/Room');
 require('../models/Theater');
 
@@ -9,13 +9,14 @@ require('../models/Theater');
 exports.getAllScreenings = async (req, res) => {
     try {
         const { status } = req.query;
-        let query = { isActive: true }; // Thêm isActive filter như movie
-        
-        if (status) query.status = status;
+        let query = { isActive: true };
 
-        const screenings = await Screening.find(query)
-            .populate('movieId roomId createdBy approvedBy')
-            .sort({ createdAt: -1 }); // Thêm sort như movie
+        const validStatuses = ['pending', 'approved', 'rejected'];
+        if (status && validStatuses.includes(status)) {
+            query.status = status;
+        }
+
+        const screenings = await Screening.find(query).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -23,8 +24,6 @@ exports.getAllScreenings = async (req, res) => {
             data: screenings,
             count: screenings.length
         });
-        const screenings = await Screening.find().populate('movieId roomId theaterId createdBy approvedBy');
-        res.json(screenings);
     } catch (err) {
         res.status(500).json({
             success: false,
@@ -53,9 +52,6 @@ exports.getScreeningById = async (req, res) => {
             message: 'Get screening successfully',
             data: screening
         });
-        const screening = await Screening.findById(req.params.id).populate('movieId roomId theaterId createdBy approvedBy');
-        if (!screening) return res.status(404).json({ message: 'Screening not found' });
-        res.json(screening);
     } catch (err) {
         res.status(500).json({
             success: false,
@@ -81,10 +77,27 @@ async function isTimeOverlap(roomId, startTime, endTime, excludeId = null) {
 // Tạo suất chiếu mới
 exports.createScreening = async (req, res) => {
     try {
-        const { movieId, roomId, startTime, endTime, ticketPrice, createdBy } = req.body;
+        let { movieId, roomId, theaterId, startTime, endTime } = req.body;
+        let ticketPrice = 90000;
         
+        if (startTime && typeof startTime === 'string') {
+            startTime = new Date(startTime);
+        }
+        if (endTime && typeof endTime === 'string') {
+            endTime = new Date(endTime);
+        }
+
+        if (!endTime && startTime) {
+            const movie = await Movie.findById(movieId);
+            let duration = 90; // mặc định 90 phút nếu không có
+            if (movie && movie.duration) {
+                duration = movie.duration;
+            }
+            const start = new Date(startTime);
+            endTime = new Date(start.getTime() + (duration + 10) * 60000); // duration + 10 phút
+        }
+
         // Kiểm tra trùng giờ
-        const { movieId, roomId, theaterId, startTime, endTime, ticketPrice, createdBy } = req.body;
         if (await isTimeOverlap(roomId, startTime, endTime)) {
             return res.status(400).json({ 
                 success: false,
@@ -92,20 +105,19 @@ exports.createScreening = async (req, res) => {
             });
         }
 
-        // Tạo screening với status pending
+        // Tạo screening với status pending (không có createdBy)
         const screening = await Screening.create({
             movieId, 
             roomId, 
+            theaterId,
             startTime, 
-            endTime, 
+            endTime,
             ticketPrice, 
-            createdBy,
             status: 'pending'
         });
 
-        // Tạo approval request
+        // Tạo approval request (không có staffId)
         await ApprovalRequest.create({
-            staffId: createdBy,
             type: 'screening',
             requestData: screening.toObject(),
             referenceId: screening._id,
@@ -116,8 +128,6 @@ exports.createScreening = async (req, res) => {
             success: true,
             message: 'Screening created and pending approval',
             data: screening
-        const screening = new Screening({
-            movieId, roomId, theaterId, startTime, endTime, ticketPrice, createdBy
         });
     } catch (err) {
         if (err.name === 'ValidationError') {
@@ -136,8 +146,7 @@ exports.createScreening = async (req, res) => {
 // Cập nhật suất chiếu
 exports.updateScreening = async (req, res) => {
     try {
-        const { movieId, roomId, startTime, endTime, ticketPrice } = req.body;
-        const { movieId, roomId, theaterId, startTime, endTime, ticketPrice, status, rejectionReason, approvedBy, isActive } = req.body;
+        const updateData = { ...req.body };
         const screening = await Screening.findById(req.params.id);
         
         if (!screening) {
@@ -147,13 +156,28 @@ exports.updateScreening = async (req, res) => {
             });
         }
 
-        const updateData = { ...req.body };
+        if (updateData.startTime && typeof updateData.startTime === 'string') {
+            updateData.startTime = new Date(updateData.startTime);
+        }
+        if (updateData.endTime && typeof updateData.endTime === 'string') {
+            updateData.endTime = new Date(updateData.endTime);
+        }
+
+        // Nếu không truyền endTime nhưng có startTime hoặc movieId, tự động tính lại endTime
+        if ((!updateData.endTime) && (updateData.startTime || updateData.movieId)) {
+            const movieId = updateData.movieId || screening.movieId;
+            const movie = await require('../models/Movie').findById(movieId);
+            let duration = 90;
+            if (movie && movie.duration) duration = movie.duration;
+            const start = new Date(updateData.startTime || screening.startTime);
+            updateData.endTime = new Date(start.getTime() + (duration + 10) * 60000);
+        }
 
         // Kiểm tra trùng giờ nếu có thay đổi thời gian hoặc phòng
-        if ((roomId && roomId !== screening.roomId.toString()) ||
-            (startTime && startTime !== screening.startTime.toISOString()) ||
-            (endTime && endTime !== screening.endTime.toISOString())) {
-            if (await isTimeOverlap(roomId || screening.roomId, startTime || screening.startTime, endTime || screening.endTime, screening._id)) {
+        if ((updateData.roomId && updateData.roomId !== screening.roomId.toString()) ||
+            (updateData.startTime && updateData.startTime !== screening.startTime.toISOString()) ||
+            (updateData.endTime && updateData.endTime !== screening.endTime.toISOString())) {
+            if (await isTimeOverlap(updateData.roomId || screening.roomId, updateData.startTime || screening.startTime, updateData.endTime || screening.endTime, screening._id)) {
                 return res.status(400).json({ 
                     success: false,
                     message: 'Thời gian chiếu bị trùng với suất chiếu khác trong phòng này.' 
@@ -166,17 +190,6 @@ exports.updateScreening = async (req, res) => {
             updateData.status = 'pending';
             updateData.approvedBy = null;
             updateData.rejectionReason = null;
-        // Cập nhật các trường
-        if (movieId) screening.movieId = movieId;
-        if (roomId) screening.roomId = roomId;
-        if (theaterId) screening.theaterId = theaterId;
-        if (startTime) screening.startTime = startTime;
-        if (endTime) screening.endTime = endTime;
-        if (ticketPrice !== undefined) screening.ticketPrice = ticketPrice;
-        if (status) screening.status = status;
-        if (rejectionReason !== undefined) screening.rejectionReason = rejectionReason;
-        if (approvedBy) screening.approvedBy = approvedBy;
-        if (isActive !== undefined) screening.isActive = isActive;
 
             // Tạo approval request mới
             await ApprovalRequest.create({
@@ -290,16 +303,20 @@ exports.getScreeningsByStatus = async (req, res) => {
 // Lấy tất cả suất chiếu theo rạp
 exports.getScreeningsByTheater = async (req, res) => {
     try {
+        const roomsInTheater = await require('../models/Room').find({ theaterId: req.params.theaterId });
+        const roomIds = roomsInTheater.map(room => room._id);
+
         const screenings = await Screening.find({
-            theaterId: req.params.theaterId,
+            roomId: { $in: roomIds },
             isActive: true
-        }).populate('movieId roomId theaterId createdBy approvedBy');
+        }).populate('movieId roomId createdBy approvedBy');
 
-        if (!screenings.length) {
-            return res.status(404).json({ message: 'Không tìm thấy suất chiếu nào cho rạp này' });
-        }
-
-        res.json(screenings);
+        res.status(200).json({
+            success: true,
+            message: screenings.length ? 'Lấy danh sách suất chiếu thành công' : 'Không có suất chiếu nào cho rạp này',
+            data: screenings,
+            count: screenings.length
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -311,7 +328,7 @@ exports.getScreeningsByMovie = async (req, res) => {
         const screenings = await Screening.find({
             movieId: req.params.movieId,
             isActive: true
-        }).populate('movieId roomId theaterId createdBy approvedBy');
+        }).populate('movieId roomId createdBy approvedBy'); // Loại bỏ theaterId khỏi populate vì Screening không có nó trực tiếp
 
         if (!screenings.length) {
             return res.status(404).json({ message: 'Không tìm thấy suất chiếu nào cho phim này' });

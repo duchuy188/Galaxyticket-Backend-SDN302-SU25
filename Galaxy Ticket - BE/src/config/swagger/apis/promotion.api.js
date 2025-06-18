@@ -11,6 +11,13 @@
  *   get:
  *     summary: Lấy danh sách promotion
  *     tags: [Promotions]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         description: Filter by approval status
  *     responses:
  *       200:
  *         description: Danh sách promotion

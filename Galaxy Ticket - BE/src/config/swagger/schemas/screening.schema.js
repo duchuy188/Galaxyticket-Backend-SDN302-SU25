@@ -60,8 +60,6 @@
  *         - roomId
  *         - theaterId
  *         - startTime
- *         - endTime
- *         - ticketPrice
  *         - createdBy
  *       properties:
  *         movieId:
@@ -76,8 +74,7 @@
  *         endTime:
  *           type: string
  *           format: date-time
- *         ticketPrice:
- *           type: number
+ *           description: Nếu không truyền, hệ thống sẽ tự động tính bằng startTime + duration của phim + 20 phút dọn vệ sinh. Nếu không có duration, mặc định là 1.5 giờ + 20 phút.
  *         createdBy:
  *           type: string
  *     ScreeningUpdate:
@@ -95,6 +92,7 @@
  *         endTime:
  *           type: string
  *           format: date-time
+ *           description: Không bắt buộc. Nếu không truyền, hệ thống sẽ tự động tính lại dựa vào startTime và thời lượng phim.
  *         ticketPrice:
  *           type: number
  *         status:
