@@ -1,23 +1,56 @@
 const Promotion = require('../models/Promotion');
+const ApprovalRequest = require('../models/ApprovalRequest');
 
 // Lấy tất cả promotion
 exports.getAllPromotions = async (req, res) => {
     try {
-        const promotions = await Promotion.find();
-        res.json(promotions);
+        const { status } = req.query;
+        let query = { isActive: true }; // Thêm isActive filter như movie
+        
+        if (status) query.status = status;
+
+        const promotions = await Promotion.find(query)
+            .sort({ createdAt: -1 }); // Thêm sort như movie
+
+        res.status(200).json({
+            success: true,
+            message: 'Get all promotions successfully',
+            data: promotions,
+            count: promotions.length
+        });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
 // Lấy promotion theo ID
 exports.getPromotionById = async (req, res) => {
     try {
-        const promotion = await Promotion.findById(req.params.id);
-        if (!promotion) return res.status(404).json({ message: 'Promotion not found' });
-        res.json(promotion);
+        const promotion = await Promotion.findOne({
+            _id: req.params.id,
+            isActive: true
+        });
+        
+        if (!promotion) {
+            return res.status(404).json({
+                success: false,
+                message: 'Promotion not found'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            message: 'Get promotion successfully',
+            data: promotion
+        });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
@@ -31,34 +64,135 @@ exports.createPromotion = async (req, res) => {
         if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
         if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
 
-        console.log('startDate:', req.body.startDate, 'endDate:', req.body.endDate);
-        const promotion = new Promotion(req.body);
-        await promotion.save();
-        res.status(201).json(promotion);
+        // Tạo promotion với status pending
+        const promotion = await Promotion.create({
+            ...req.body,
+            status: 'pending'
+        });
+
+        // Tạo approval request
+        await ApprovalRequest.create({
+            staffId: req.body.createdBy,
+            type: 'promotion',
+            requestData: promotion.toObject(),
+            referenceId: promotion._id,
+            status: 'pending'
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Promotion created and pending approval',
+            data: promotion
+        });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                success: false,
+                message: Object.values(err.errors).map(err => err.message).join(', ')
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
 // Cập nhật promotion
 exports.updatePromotion = async (req, res) => {
     try {
-        const promotion = await Promotion.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!promotion) return res.status(404).json({ message: 'Promotion not found' });
-        res.json(promotion);
+        const promotion = await Promotion.findById(req.params.id);
+        if (!promotion) {
+            return res.status(404).json({
+                success: false,
+                message: 'Promotion not found'
+            });
+        }
+
+        const updateData = { ...req.body };
+        if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
+        if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
+
+        // Nếu promotion đã được approve, tạo approval request mới
+        if (promotion.status === 'approved') {
+            updateData.status = 'pending';
+            updateData.approvedBy = null;
+            updateData.rejectionReason = null;
+
+            // Tạo approval request mới
+            await ApprovalRequest.create({
+                staffId: promotion.createdBy,
+                type: 'promotion',
+                requestData: { ...promotion.toObject(), ...updateData },
+                referenceId: promotion._id,
+                status: 'pending'
+            });
+        } else if (promotion.status === 'rejected') {
+            updateData.status = 'pending';
+            updateData.rejectionReason = null;
+
+            // Tạo approval request mới
+            await ApprovalRequest.create({
+                staffId: promotion.createdBy,
+                type: 'promotion',
+                requestData: { ...promotion.toObject(), ...updateData },
+                referenceId: promotion._id,
+                status: 'pending'
+            });
+        }
+
+        const updatedPromotion = await Promotion.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: promotion.status === 'pending' ? 
+                'Promotion updated successfully' : 
+                'Promotion update submitted for approval',
+            data: updatedPromotion
+        });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                success: false,
+                message: Object.values(err.errors).map(err => err.message).join(', ')
+            });
+        }
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
-// Xóa promotion
+// Xóa promotion (soft delete)
 exports.deletePromotion = async (req, res) => {
     try {
-        const promotion = await Promotion.findByIdAndDelete(req.params.id);
-        if (!promotion) return res.status(404).json({ message: 'Promotion not found' });
-        res.json({ message: 'Promotion deleted' });
+        const promotion = await Promotion.findByIdAndUpdate(
+            req.params.id,
+            { isActive: false },
+            { new: true }
+        );
+
+        if (!promotion) {
+            return res.status(404).json({
+                success: false,
+                message: 'Promotion not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Promotion deleted successfully'
+        });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const screeningController = require('../controllers/screeningController');
+const { authenticate, authorizeRoles } = require('../middlewares/auth.middleware');
 
 // Lấy tất cả suất chiếu
 router.get('/', screeningController.getAllScreenings);
@@ -15,12 +16,12 @@ router.get('/movie/:movieId', screeningController.getScreeningsByMovie);
 router.get('/:id', screeningController.getScreeningById);
 
 // Tạo suất chiếu mới
-router.post('/', screeningController.createScreening);
+router.post('/', authenticate, authorizeRoles('staff'), screeningController.createScreening);
 
 // Cập nhật suất chiếu
-router.put('/:id', screeningController.updateScreening);
+router.put('/:id', authenticate, authorizeRoles('staff'), screeningController.updateScreening);
 
 // Xóa (deactivate) suất chiếu
-router.delete('/:id', screeningController.deleteScreening);
+router.delete('/:id', authenticate, authorizeRoles('manager', 'staff'), screeningController.deleteScreening);
 
 module.exports = router;
