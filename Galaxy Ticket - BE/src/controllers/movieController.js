@@ -11,14 +11,14 @@ const getAllMovies = async (req, res) => {
     if (status) query.status = status;
     if (showingStatus) query.showingStatus = showingStatus;
 
-    // Nếu là staff hoặc manager thì có thể xem tất cả phim (kể cả pending, rejected)
+    
     if (req.user && (req.user.role === "staff" || req.user.role === "manager")) {
-      // Staff/manager có thể xem cả phim không active nếu muốn
+      
       if (req.query.includeInactive === "true") {
         delete query.isActive;
       }
     } else {
-      // Nếu là guest hoặc member thì chỉ xem được phim đã approved
+      
       query.status = "approved";
     }
 
@@ -89,7 +89,24 @@ const createMovie = async (req, res) => {
       actors
     } = req.body;
 
-    // Chuyển đổi directors và actors thành mảng nếu không phải
+  
+    if (directors && typeof directors === 'string') {
+      try {
+        directors = JSON.parse(directors);
+      } catch (e) {
+        directors = [directors]; 
+      }
+    }
+    
+    if (actors && typeof actors === 'string') {
+      try {
+        actors = JSON.parse(actors);
+      } catch (e) {
+        actors = [actors];
+      }
+    }
+
+
     if (directors && !Array.isArray(directors)) {
       directors = [directors];
     }
@@ -98,7 +115,6 @@ const createMovie = async (req, res) => {
       actors = [actors];
     }
 
-    // Check required fields
     if (
       !title ||
       !description ||
@@ -207,6 +223,32 @@ const updateMovie = async (req, res) => {
   try {
     const updateData = { ...req.body };
     
+    // Parse directors and actors if they are JSON strings
+    if (updateData.directors && typeof updateData.directors === 'string') {
+      try {
+        updateData.directors = JSON.parse(updateData.directors);
+      } catch (e) {
+        updateData.directors = [updateData.directors]; 
+      }
+    }
+    
+    if (updateData.actors && typeof updateData.actors === 'string') {
+      try {
+        updateData.actors = JSON.parse(updateData.actors);
+      } catch (e) {
+        updateData.actors = [updateData.actors]; 
+      }
+    }
+
+  
+    if (updateData.directors && !Array.isArray(updateData.directors)) {
+      updateData.directors = [updateData.directors];
+    }
+    
+    if (updateData.actors && !Array.isArray(updateData.actors)) {
+      updateData.actors = [updateData.actors];
+    }
+    
     if (req.file) {
       updateData.posterUrl = await uploadImage(req.file);
     }
@@ -220,7 +262,6 @@ const updateMovie = async (req, res) => {
       });
     }
 
-    // Kiểm tra tính hợp lệ của showingStatus
     if (updateData.showingStatus) {
       const currentStatus = movie.showingStatus;
       const newStatus = updateData.showingStatus;
@@ -248,9 +289,9 @@ const updateMovie = async (req, res) => {
       }
     }
 
-    // Nếu phim đã approved
+  
     if (movie.status === 'approved') {
-      // Tạo approval request mới
+
       await ApprovalRequest.create({
         staffId: movie.createdBy,
         type: 'movie',
@@ -262,7 +303,7 @@ const updateMovie = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: 'Update request has been submitted and waiting for approval',
-        data: movie // Trả về phim gốc
+        data: movie 
       });
     }
  
@@ -298,7 +339,7 @@ const updateMovie = async (req, res) => {
   }
 };
 
-// Delete movie (soft delete)
+
 const deleteMovie = async (req, res) => {
   try {
     const movie = await Movie.findByIdAndUpdate(
