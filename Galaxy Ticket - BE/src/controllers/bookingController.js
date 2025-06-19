@@ -130,31 +130,10 @@ exports.createBooking = async (req, res) => {
 
         if (code) {
             bookingData.code = code;
-        }
+        }        const newBooking = await Booking.create(bookingData);
 
-        const newBooking = await Booking.create(bookingData);
-
-        // After successful booking, send email with ticket details
-        try {
-            const user = await User.findById(userId);
-            if (user && user.email) {
-                const ticketData = {
-                    movieName: screening.movieId.title,
-                    screeningTime: screening.startTime,
-                    seatNumbers: seatNumbers,
-                    cinemaName: screening.roomId.theaterId.name,
-                    hallName: screening.roomId.name,
-                    bookingCode: newBooking.code,
-                    totalPrice: totalPrice,
-                    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newBooking._id}` // Generate QR code URL
-                };
-
-                await sendMovieTicket(user.email, ticketData);
-            }
-        } catch (emailError) {
-            console.error('Error sending ticket email:', emailError);
-            // Don't fail the booking if email fails
-        }
+        // Không gửi email tại đây. Email chỉ được gửi sau khi thanh toán thành công
+        // trong phương thức updateBookingStatus
 
         // Update seat status to 'reserved'
         await Seat.updateMany(
@@ -474,23 +453,58 @@ exports.updateBookingStatus = async (req, res) => {
                         select: 'name'
                     }
                 ]
-            }); // Populate để lấy chi tiết phim và phòng cho mã QR
-
+            }); 
+            
         if (!booking) {
             return res.status(404).json({ message: 'Không tìm thấy đặt vé' });
         }
 
+        // Kiểm tra trạng thái hiện tại của booking
+        if (booking.paymentStatus === 'cancelled') {
+            return res.status(400).json({
+                success: false, 
+                message: 'Không thể thanh toán cho đặt vé đã bị hủy. Thời gian giữ ghế đã hết hạn.'
+            });
+        }
+
+        if (booking.paymentStatus === 'paid') {
+            return res.status(400).json({
+                success: false,
+                message: 'Đặt vé này đã được thanh toán'
+            });
+        }
+
+        // Kiểm tra xem ghế vẫn còn khả dụng không
+        const seats = await Seat.find({
+            screeningId: booking.screeningId,
+            seatNumber: { $in: booking.seatNumbers }
+        });
+
+        // Kiểm tra nếu có ghế nào đã bị đặt bởi người khác
+        const unavailableSeats = seats.filter(seat => 
+            seat.status === 'booked' || 
+            (seat.status === 'reserved' && 
+             seat.reservedAt && 
+             new Date() - new Date(seat.reservedAt) < 5 * 60 * 1000 && // ghế được đặt dưới 5 phút
+             (!booking._id.equals(seat.bookingId) && seat.bookingId)) // ghế không thuộc booking hiện tại
+        );
+
+        if (unavailableSeats.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Không thể thanh toán vì ghế ${unavailableSeats.map(s => s.seatNumber).join(', ')} đã được đặt bởi người khác. Vui lòng chọn ghế khác.`
+            });
+        }
+
         // Cập nhật trạng thái đặt vé thành đã thanh toán
         booking.paymentStatus = 'paid';
-        await booking.save();
-
-        // Xóa thời gian chờ tự động hủy nếu nó tồn tại
+        await booking.save();        // Xóa thời gian chờ tự động hủy nếu nó tồn tại
         if (activeBookingTimeouts[bookingId]) {
             clearTimeout(activeBookingTimeouts[bookingId]);
             delete activeBookingTimeouts[bookingId];
             console.log(`Đã xóa thời gian chờ tự động hủy cho đặt vé ${bookingId}`);
         }
-
+        
         // Cập nhật trạng thái ghế thành đã đặt
         await Seat.updateMany(
             {
@@ -502,7 +516,7 @@ exports.updateBookingStatus = async (req, res) => {
                 reservedAt: null
             }
         );
-
+        
         // Tạo mã QR cho đặt vé đã xác nhận
         const qrContent = [
             `Mã đặt vé: ${booking._id.toString()}`,
@@ -514,6 +528,32 @@ exports.updateBookingStatus = async (req, res) => {
             `Ngày đặt: Ngày: ${new Date(booking.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} vào lúc: ${new Date(booking.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })}`
         ].join('\n');
         const qrCodeDataUrl = await QRCode.toDataURL(qrContent);
+        
+        // Gửi email xác nhận sau khi thanh toán thành công
+        try {
+            // Lấy thông tin người dùng
+            const user = await User.findById(booking.userId);
+            if (user && user.email) {
+                // Tạo dữ liệu cho email
+                const ticketData = {
+                    movieName: booking.screeningId.movieId.title,
+                    screeningTime: booking.screeningId.startTime,
+                    seatNumbers: booking.seatNumbers,
+                    cinemaName: booking.screeningId.roomId.theaterId.name,
+                    hallName: booking.screeningId.roomId.name,
+                    bookingCode: booking.code,
+                    totalPrice: booking.totalPrice,
+                    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${booking._id}`
+                };
+
+                // Gửi email xác nhận vé
+                await sendMovieTicket(user.email, ticketData);
+                console.log('Đã gửi email xác nhận vé sau khi thanh toán thành công cho:', user.email);
+            }
+        } catch (emailError) {
+            console.error('Lỗi khi gửi email xác nhận vé:', emailError);
+            // Không làm thất bại quá trình thanh toán nếu gửi email thất bại
+        }
 
         res.json({
             message: 'Cập nhật trạng thái đặt vé thành đã thanh toán thành công',
