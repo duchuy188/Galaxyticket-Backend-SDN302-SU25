@@ -57,22 +57,40 @@ exports.getPromotionById = async (req, res) => {
 // Tạo promotion mới
 exports.createPromotion = async (req, res) => {
     try {
+        console.log('Create promotion request body:', req.body);
+        console.log('Authenticated user:', req.user);
+        
         if (req.body._id) {
             delete req.body._id;
         }
         // Ép kiểu ngày
         if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
-        if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);
+        if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);        // Kiểm tra và lấy ID người dùng
+        let createdBy;
+        // Sử dụng userId từ req.user (theo cách JWT được tạo trong auth.controller.js)
+        if (req.user) {
+            createdBy = req.user.userId;
+            console.log('User from JWT token:', req.user);
+        } 
+        
+        // Nếu không có createdBy, báo lỗi
+        if (!createdBy) {
+            return res.status(400).json({
+                success: false,
+                message: "createdBy field is required"
+            });
+        }
+        
+        console.log('Using createdBy:', createdBy);
 
         // Tạo promotion với status pending
         const promotion = await Promotion.create({
             ...req.body,
+            createdBy,
             status: 'pending'
-        });
-
-        // Tạo approval request
+        });        // Tạo approval request
         await ApprovalRequest.create({
-            staffId: req.body.createdBy,
+            staffId: req.user.userId,
             type: 'promotion',
             requestData: promotion.toObject(),
             referenceId: promotion._id,
@@ -101,6 +119,9 @@ exports.createPromotion = async (req, res) => {
 // Cập nhật promotion
 exports.updatePromotion = async (req, res) => {
     try {
+        console.log('Update promotion request body:', req.body);
+        console.log('Authenticated user:', req.user);
+
         const promotion = await Promotion.findById(req.params.id);
         if (!promotion) {
             return res.status(404).json({
@@ -113,6 +134,9 @@ exports.updatePromotion = async (req, res) => {
         if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
         if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
 
+        // Lấy userId từ thông tin đăng nhập
+        const staffId = req.user.userId;
+
         // Nếu promotion đã được approve, tạo approval request mới
         if (promotion.status === 'approved') {
             updateData.status = 'pending';
@@ -121,7 +145,7 @@ exports.updatePromotion = async (req, res) => {
 
             // Tạo approval request mới
             await ApprovalRequest.create({
-                staffId: promotion.createdBy,
+                staffId: staffId,
                 type: 'promotion',
                 requestData: { ...promotion.toObject(), ...updateData },
                 referenceId: promotion._id,
@@ -133,7 +157,7 @@ exports.updatePromotion = async (req, res) => {
 
             // Tạo approval request mới
             await ApprovalRequest.create({
-                staffId: promotion.createdBy,
+                staffId: staffId,
                 type: 'promotion',
                 requestData: { ...promotion.toObject(), ...updateData },
                 referenceId: promotion._id,
