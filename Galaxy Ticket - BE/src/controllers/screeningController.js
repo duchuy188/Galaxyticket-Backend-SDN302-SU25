@@ -10,14 +10,15 @@ exports.getAllScreenings = async (req, res) => {
     try {
         const { status } = req.query;
         let query = { isActive: true };
-
         const validStatuses = ['pending', 'approved', 'rejected'];
         if (status && validStatuses.includes(status)) {
             query.status = status;
         }
-
+        // Nếu không phải staff/manager thì chỉ trả về suất chiếu đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        }
         const screenings = await Screening.find(query).sort({ createdAt: -1 });
-
         res.status(200).json({
             success: true,
             message: 'Get all screenings successfully',
@@ -35,18 +36,21 @@ exports.getAllScreenings = async (req, res) => {
 // Lấy chi tiết 1 suất chiếu
 exports.getScreeningById = async (req, res) => {
     try {
-        const screening = await Screening.findOne({
+        let query = {
             _id: req.params.id,
             isActive: true
-        }).populate('movieId roomId createdBy approvedBy');
-        
+        };
+        // Nếu không phải staff/manager thì chỉ trả về suất chiếu đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        }
+        const screening = await Screening.findOne(query).populate('movieId roomId createdBy approvedBy');
         if (!screening) {
             return res.status(404).json({
                 success: false,
                 message: 'Screening not found'
             });
         }
-        
         res.status(200).json({
             success: true,
             message: 'Get screening successfully',
@@ -80,6 +84,27 @@ exports.createScreening = async (req, res) => {
         let { movieId, roomId, theaterId, startTime, endTime } = req.body;
         let ticketPrice = 90000;
         
+        // Kiểm tra trạng thái showingStatus của movie
+        const movie = await Movie.findById(movieId);
+        if (!movie) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy phim.'
+            });
+        }
+        if (movie.showingStatus === 'coming-soon') {
+            return res.status(400).json({
+                success: false,
+                message: 'Phim này chưa được phép tạo suất chiếu (coming-soon).'
+            });
+        }
+        if (movie.showingStatus !== 'now-showing') {
+            return res.status(400).json({
+                success: false,
+                message: 'Chỉ phim đang chiếu (now-showing) mới được phép tạo suất chiếu.'
+            });
+        }
+
         if (startTime && typeof startTime === 'string') {
             startTime = new Date(startTime);
         }
@@ -88,7 +113,6 @@ exports.createScreening = async (req, res) => {
         }
 
         if (!endTime && startTime) {
-            const movie = await Movie.findById(movieId);
             let duration = 90; // mặc định 90 phút nếu không có
             if (movie && movie.duration) {
                 duration = movie.duration;
@@ -113,7 +137,7 @@ exports.createScreening = async (req, res) => {
             startTime, 
             endTime,
             ticketPrice, 
-            status: 'pending'
+            status: 'pending',       
         });
 
         // Tạo approval request (không có staffId)
@@ -305,12 +329,15 @@ exports.getScreeningsByTheater = async (req, res) => {
     try {
         const roomsInTheater = await require('../models/Room').find({ theaterId: req.params.theaterId });
         const roomIds = roomsInTheater.map(room => room._id);
-
-        const screenings = await Screening.find({
+        let query = {
             roomId: { $in: roomIds },
             isActive: true
-        }).populate('movieId roomId createdBy approvedBy');
-
+        };
+        // Nếu không phải staff/manager thì chỉ trả về suất chiếu đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        }
+        const screenings = await Screening.find(query).populate('movieId roomId createdBy approvedBy');
         res.status(200).json({
             success: true,
             message: screenings.length ? 'Lấy danh sách suất chiếu thành công' : 'Không có suất chiếu nào cho rạp này',
@@ -325,15 +352,18 @@ exports.getScreeningsByTheater = async (req, res) => {
 // Lấy tất cả suất chiếu theo phim
 exports.getScreeningsByMovie = async (req, res) => {
     try {
-        const screenings = await Screening.find({
+        let query = {
             movieId: req.params.movieId,
             isActive: true
-        }).populate('movieId roomId createdBy approvedBy'); // Loại bỏ theaterId khỏi populate vì Screening không có nó trực tiếp
-
+        };
+        // Nếu không phải staff/manager thì chỉ trả về suất chiếu đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        }
+        const screenings = await Screening.find(query).populate('movieId roomId createdBy approvedBy'); // Loại bỏ theaterId khỏi populate vì Screening không có nó trực tiếp
         if (!screenings.length) {
             return res.status(404).json({ message: 'Không tìm thấy suất chiếu nào cho phim này' });
         }
-
         res.json(screenings);
     } catch (err) {
         res.status(500).json({ message: err.message });

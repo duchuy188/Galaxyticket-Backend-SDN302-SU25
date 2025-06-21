@@ -4,13 +4,13 @@ const screeningController = require('../controllers/screeningController');
 const { authenticate, authorizeRoles } = require('../middlewares/auth.middleware');
 
 // Lấy tất cả suất chiếu
-router.get('/', screeningController.getAllScreenings);
+router.get('/', authenticate, screeningController.getAllScreenings);
 
 // Lấy tất cả suất chiếu theo rạp
-router.get('/theater/:theaterId', screeningController.getScreeningsByTheater);
+router.get('/theater/:theaterId', authenticate, screeningController.getScreeningsByTheater);
 
 // Lấy tất cả suất chiếu theo phim
-router.get('/movie/:movieId', screeningController.getScreeningsByMovie);
+router.get('/movie/:movieId', authenticate, screeningController.getScreeningsByMovie);
 
 // Lấy chi tiết 1 suất chiếu
 router.get('/:id', screeningController.getScreeningById);
