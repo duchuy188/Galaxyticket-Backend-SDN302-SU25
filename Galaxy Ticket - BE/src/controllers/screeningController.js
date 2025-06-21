@@ -127,9 +127,7 @@ exports.createScreening = async (req, res) => {
                 success: false,
                 message: 'Thời gian chiếu bị trùng với suất chiếu khác trong phòng này.' 
             });
-        }
-
-        // Tạo screening với status pending (không có createdBy)
+        }        // Tạo screening với status pending và bao gồm createdBy
         const screening = await Screening.create({
             movieId, 
             roomId, 
@@ -138,14 +136,17 @@ exports.createScreening = async (req, res) => {
             endTime,
             ticketPrice, 
             status: 'pending',       
+            status: 'pending',
+            createdBy: req.user.userId  // Sử dụng userId từ thông tin người dùng đã xác thực
         });
 
-        // Tạo approval request (không có staffId)
+        // Tạo approval request với staffId
         await ApprovalRequest.create({
             type: 'screening',
             requestData: screening.toObject(),
             referenceId: screening._id,
-            status: 'pending'
+            status: 'pending',
+            staffId: req.user.userId  // Sử dụng userId từ thông tin người dùng đã xác thực
         });
 
         res.status(201).json({
