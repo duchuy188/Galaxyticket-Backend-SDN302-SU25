@@ -4,7 +4,7 @@ const bookingController = require('../controllers/bookingController');
 const { authenticate } = require('../middlewares/auth.middleware');
 
 // Get user's bookings
-router.get('/my-bookings', authenticate, bookingController.getUserBookings);
+router.get('/user', authenticate, bookingController.getUserBookings);
 
 // Get all bookings with filters
 router.get('/', bookingController.getBookings);
@@ -24,4 +24,4 @@ router.post('/:bookingId/status', bookingController.updateBookingStatus);
 // Route để gửi email vé
 router.post('/:bookingId/send-ticket', authenticate, bookingController.sendTicketEmail);
 
-module.exports = router; 
+module.exports = router;
