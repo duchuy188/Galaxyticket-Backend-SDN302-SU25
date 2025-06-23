@@ -85,14 +85,21 @@ exports.getBookings = async (req, res) => {
 
 // Create a new booking
 exports.createBooking = async (req, res) => {
-    try {
-        const { userId, screeningId, seatNumbers: rawSeatNumbers, code } = req.body;
+    try {        const { screeningId, seatNumbers: rawSeatNumbers, code } = req.body;
+        const userId = req.user.userId; // Get userId from authenticated user
 
         // Validate required fields
-        if (!userId || !screeningId || !rawSeatNumbers) {
+        if (!screeningId || !rawSeatNumbers) {
             return res.status(400).json({ 
                 success: false,
                 message: 'Thiếu thông tin bắt buộc' 
+            });
+        }
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Không tìm thấy thông tin người dùng, vui lòng đăng nhập lại'
             });
         }
 

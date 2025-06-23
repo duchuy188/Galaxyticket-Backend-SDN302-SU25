@@ -10,7 +10,7 @@ router.get('/user', authenticate, bookingController.getUserBookings);
 router.get('/', bookingController.getBookings);
 
 // Create a new booking
-router.post('/', bookingController.createBooking);
+router.post('/', authenticate, bookingController.createBooking);
 
 // Cancel a booking
 router.post('/:bookingId/cancel', bookingController.cancelBooking);
