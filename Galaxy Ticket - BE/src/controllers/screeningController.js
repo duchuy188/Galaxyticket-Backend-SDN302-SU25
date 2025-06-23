@@ -135,8 +135,7 @@ exports.createScreening = async (req, res) => {
             startTime, 
             endTime,
             ticketPrice, 
-            status: 'pending',       
-            status: 'pending',
+            status: 'pending',                  
             createdBy: req.user.userId  // Sử dụng userId từ thông tin người dùng đã xác thực
         });
 

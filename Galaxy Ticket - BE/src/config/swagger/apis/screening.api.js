@@ -291,4 +291,99 @@
  *               properties:
  *                 message:
  *                   type: string
+ *
+ * @swagger
+ * /api/screenings/public:
+ *   get:
+ *     summary: Lấy danh sách suất chiếu công khai (public)
+ *     description: Chỉ trả về các suất chiếu đã được duyệt (status: approved). Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route, có thể lọc theo movieId, theaterId, startTime.
+ *     tags: [Screening]
+ *     parameters:
+ *       - in: query
+ *         name: movieId
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID phim
+ *       - in: query
+ *         name: theaterId
+ *         schema:
+ *           type: string
+ *         description: Lọc theo ID rạp chiếu
+ *       - in: query
+ *         name: startTime
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Lấy các suất chiếu bắt đầu từ thời điểm này trở đi
+ *     responses:
+ *       200:
+ *         description: Danh sách suất chiếu công khai
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Screening'
+ *                 count:
+ *                   type: integer
+ *       500:
+ *         description: Lỗi server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *
+ * /api/screenings/member:
+ *   get:
+ *     summary: Lấy danh sách suất chiếu cho member (cần đăng nhập)
+ *     description: Chỉ trả về các suất chiếu đã được duyệt (status: approved) cho member đã xác thực. Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route.
+ *     tags: [Screening]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách suất chiếu cho member
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Screening'
+ *                 count:
+ *                   type: integer
+ *       401:
+ *         description: Không xác thực hoặc không có quyền
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Lỗi server
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
