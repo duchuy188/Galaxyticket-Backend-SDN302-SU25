@@ -99,7 +99,7 @@ exports.createPromotion = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Promotion created and pending approval',
+            message: 'Promotion created and pen nding approval',
             data: promotion
         });
     } catch (err) {

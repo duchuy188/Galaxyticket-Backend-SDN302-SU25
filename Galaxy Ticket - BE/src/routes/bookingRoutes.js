@@ -4,13 +4,13 @@ const bookingController = require('../controllers/bookingController');
 const { authenticate } = require('../middlewares/auth.middleware');
 
 // Get user's bookings
-router.get('/my-bookings', authenticate, bookingController.getUserBookings);
+router.get('/user', authenticate, bookingController.getUserBookings);
 
 // Get all bookings with filters
 router.get('/', bookingController.getBookings);
 
 // Create a new booking
-router.post('/', bookingController.createBooking);
+router.post('/', authenticate, bookingController.createBooking);
 
 // Cancel a booking
 router.post('/:bookingId/cancel', bookingController.cancelBooking);
@@ -24,4 +24,4 @@ router.post('/:bookingId/status', bookingController.updateBookingStatus);
 // Route để gửi email vé
 router.post('/:bookingId/send-ticket', authenticate, bookingController.sendTicketEmail);
 
-module.exports = router; 
+module.exports = router;
