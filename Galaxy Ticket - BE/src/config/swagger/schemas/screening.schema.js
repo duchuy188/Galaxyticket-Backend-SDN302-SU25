@@ -60,7 +60,6 @@
  *         - roomId
  *         - theaterId
  *         - startTime
- *         - createdBy
  *       properties:
  *         movieId:
  *           type: string
