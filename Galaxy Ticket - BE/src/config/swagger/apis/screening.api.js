@@ -296,7 +296,7 @@
  * /api/screenings/public:
  *   get:
  *     summary: Lấy danh sách suất chiếu công khai (public)
- *     description: Chỉ trả về các suất chiếu đã được duyệt (status: approved). Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route, có thể lọc theo movieId, theaterId, startTime.
+ *     description: "Chỉ trả về các suất chiếu đã được duyệt (status: approved). Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route, có thể lọc theo movieId, theaterId, startTime."
  *     tags: [Screening]
  *     parameters:
  *       - in: query
@@ -346,7 +346,7 @@
  * /api/screenings/member:
  *   get:
  *     summary: Lấy danh sách suất chiếu cho member (cần đăng nhập)
- *     description: Chỉ trả về các suất chiếu đã được duyệt (status: approved) cho member đã xác thực. Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route.
+ *     description: "Chỉ trả về các suất chiếu đã được duyệt (status: approved) cho member đã xác thực. Không thể xem các suất chiếu ở trạng thái khác qua API này. Xử lý trực tiếp trong route."
  *     tags: [Screening]
  *     security:
  *       - bearerAuth: []
