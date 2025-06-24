@@ -7,17 +7,6 @@ const Booking = require('../models/Booking');
 const mongoose = require('mongoose');
 const Seat = require('../models/Seat');
 
-// Debug log for environment variables
-console.log('VNPay Environment Variables:', {
-    TMN_CODE: process.env.VNP_TMN_CODE,
-    HASH_SECRET: process.env.VNP_HASH_SECRET,
-    URL: process.env.VNP_URL,
-    RETURN_URL: process.env.VNP_RETURN_URL
-});
-
-// Debug log for vnpayConfig
-console.log('VNPay Config:', vnpayConfig);
-
 // Helper function to sort object by key
 function sortObject(obj) {
     let sorted = {};
@@ -79,13 +68,6 @@ const createPaymentUrl = async(req, res) => {
             .map(key => `${key}=${encodeURIComponent(vnp_Params[key])}`)
             .join('&');
 
-        console.log('Debug createPaymentUrl:', {
-            signData,
-            secretKey: vnpayConfig.vnp_HashSecret,
-            signed,
-            params: vnp_Params
-        });
-
         return res.status(200).json({
             code: '00',
             data: paymentUrl
@@ -135,15 +117,6 @@ const vnpayReturn = async(req, res) => {
         const hmac = crypto.createHmac('sha512', vnpayConfig.vnp_HashSecret);
         const signed = hmac.update(signData).digest('hex');
 
-        console.log('Debug vnpayReturn:', {
-            receivedHash: secureHash,
-            calculatedHash: signed,
-            secretKey: vnpayConfig.vnp_HashSecret,
-            signData,
-            originalParams: req.query,
-            processedParams: vnp_Params,
-            sortedParams
-        });
 
         if (secureHash === signed) {
             const orderId = vnp_Params['vnp_TxnRef'];

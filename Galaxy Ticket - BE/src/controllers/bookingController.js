@@ -737,8 +737,6 @@ exports.updateBooking = async (req, res) => {
 exports.getUserBookings = async (req, res) => {
 
     try {        const userId = req.user.userId; // Changed from _id to userId to match JWT payload
-        console.log('Fetching bookings for user:', userId);
-        console.log('User ID type:', typeof userId);
 
         if (!userId) {
             return res.status(400).json({
@@ -752,14 +750,9 @@ exports.getUserBookings = async (req, res) => {
             userId: userId,
             paymentStatus: 'paid'
         };
-        console.log('Query:', JSON.stringify(query));
 
         // First find bookings without populate to verify query
         const rawBookings = await Booking.find(query); 
-        console.log('Raw bookings found:', rawBookings.length);
-        if (rawBookings.length > 0) {
-             console.log('Sample raw booking:', JSON.stringify(rawBookings[0]));
-        }
 
          // Now try with populate
         const bookings = await Booking.find(query)
@@ -780,12 +773,6 @@ exports.getUserBookings = async (req, res) => {
                 ]
             })
             .sort({ createdAt: -1 });
-
-        console.log('Found bookings after populate:', bookings.length);
-        if (bookings.length > 0) {            console.log('Sample populated booking screeningId:', bookings[0].screeningId);
-            console.log('Sample populated booking movie:', bookings[0].screeningId?.movieId);
-            console.log('Sample populated booking room:', bookings[0].screeningId?.roomId);
-        }
 
         if (bookings.length === 0) {
             return res.json({
@@ -824,7 +811,6 @@ exports.getUserBookings = async (req, res) => {
                     bookingDate: booking.createdAt,
                     qrCodeDataUrl
                 };
-                console.log('Transformed booking:', JSON.stringify(transformedBooking));
                 return transformedBooking;
             } catch (error) {
                 console.error('Error transforming booking:', error);
@@ -832,7 +818,6 @@ exports.getUserBookings = async (req, res) => {
             }
         }));        // Filter out any null values from failed transformations
         const validBookings = bookingsWithQrCode.filter(booking => booking !== null);
-        console.log('Final valid bookings count:', validBookings.length);
 
         res.json({
             succs: true,
