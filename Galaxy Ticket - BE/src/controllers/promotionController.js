@@ -5,9 +5,13 @@ const ApprovalRequest = require('../models/ApprovalRequest');
 exports.getAllPromotions = async (req, res) => {
     try {
         const { status } = req.query;
-        let query = { isActive: true }; // Thêm isActive filter như movie
-        
-        if (status) query.status = status;
+        let query = { isActive: true };
+        // Nếu không phải staff/manager thì chỉ trả về promotion đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        } else if (status) {
+            query.status = status;
+        }
 
         const promotions = await Promotion.find(query)
             .sort({ createdAt: -1 }); // Thêm sort như movie
@@ -29,10 +33,15 @@ exports.getAllPromotions = async (req, res) => {
 // Lấy promotion theo ID
 exports.getPromotionById = async (req, res) => {
     try {
-        const promotion = await Promotion.findOne({
+        let query = {
             _id: req.params.id,
             isActive: true
-        });
+        };
+        // Nếu không phải staff/manager thì chỉ trả về promotion đã duyệt
+        if (!req.user || (req.user.role !== 'staff' && req.user.role !== 'manager')) {
+            query.status = 'approved';
+        }
+        const promotion = await Promotion.findOne(query);
         
         if (!promotion) {
             return res.status(404).json({
