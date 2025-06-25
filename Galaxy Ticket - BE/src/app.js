@@ -11,12 +11,13 @@ const screeningRoutes = require("./routes/screeningRoutes");
 
 const app = express();
 app.use((req, res, next) => {
-  console.log("Incoming request:", req.method, req.url);
-  next();
+    console.log("Incoming request:", req.method, req.url);
+    next();
 });
 
 // CORS configuration
 const corsOptions = {
+
   origin:
     process.env.NODE_ENV === "production"
       ? "*"
@@ -24,6 +25,7 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
+
 };
 
 // Middlewares
@@ -37,15 +39,15 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger Documentation
 
 app.use(
-  "/api-docs",
-  swaggerAuth,
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, swaggerUiOptions)
+    "/api-docs",
+    swaggerAuth,
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, swaggerUiOptions)
 );
 
 // Basic route
 app.get("/", (req, res) => {
-  res.send("Galaxy Ticket API is running...");
+    res.send("Galaxy Ticket API is running...");
 });
 
 // Routes
@@ -54,10 +56,9 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/auth", require("./routes/auth.route"));
 app.use("/api/movies", require("./routes/movieRoutes"));
 app.use("/api/approval-requests", require("./routes/approvalRequestRoutes"));
-
 app.use("/api/bookings", require("./routes/bookingRoutes"));
-
 app.use("/api/seats", require("./routes/seatRoutes"));
+app.use("/api/vnpay", require("./routes/vnpayRoutes"));
 
 // Routes will be added here
 app.use("/api/auth", require("./routes/auth.route"));
@@ -75,8 +76,8 @@ app.use("/api/promotions", require("./routes/promotionRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something broke!" });
+    console.error(err.stack);
+    res.status(500).json({ message: "Something broke!" });
 });
 
 module.exports = app;

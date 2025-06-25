@@ -56,7 +56,7 @@ const getRequestById = async (req, res) => {
 const updateRequest = async (req, res) => {
     try {
         const { status, rejectionReason } = req.body;
-        const managerId = req.user.userId; // Lấy managerId từ token
+        const managerId = req.user.userId; 
         const request = await ApprovalRequest.findById(req.params.id);
 
         if (!request) {
@@ -89,22 +89,34 @@ const updateRequest = async (req, res) => {
 
         switch(request.type) {
             case 'movie':
-                const updatedMovie = await Movie.findByIdAndUpdate(
-                    request.referenceId, 
-                    {
-                        status: status,
-                        approvedBy: managerId,
-                        rejectionReason: status === 'rejected' ? rejectionReason : null
-                    },
-                    { new: true }
-                );
-
-                if (!updatedMovie) {
+             
+                const existingMovie = await Movie.findById(request.referenceId);
+                if (!existingMovie) {
                     return res.status(404).json({
                         success: false,
                         message: 'Referenced movie not found'
                     });
                 }
+
+                
+                existingMovie.title = request.requestData.title;
+                existingMovie.description = request.requestData.description;
+                existingMovie.duration = request.requestData.duration;
+                existingMovie.posterUrl = request.requestData.posterUrl;
+                existingMovie.trailerUrl = request.requestData.trailerUrl;
+                existingMovie.country = request.requestData.country;
+                existingMovie.showingStatus = request.requestData.showingStatus;
+                existingMovie.producer = request.requestData.producer;
+                existingMovie.directors = request.requestData.directors;
+                existingMovie.actors = request.requestData.actors;
+                
+            
+                existingMovie.status = status;
+                existingMovie.approvedBy = managerId;
+                existingMovie.rejectionReason = status === 'rejected' ? rejectionReason : null;
+                
+               
+                const updatedMovie = await existingMovie.save({ validateBeforeSave: false });
 
                 request.status = status;
                 request.managerId = managerId;
