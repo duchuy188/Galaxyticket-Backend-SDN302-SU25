@@ -27,6 +27,15 @@ router.get(
 
 router.get("/profile", authenticate, userController.getProfile);
 
+// User update profile của chính mình (không được sửa role)
+router.put("/profile", authenticate, userController.updateProfile);
+
+// User thay đổi mật khẩu
+router.put("/change-password", authenticate, userController.changePassword);
+
+// Xác thực OTP
+router.post("/verify-otp", authController.verifyOTP);
+
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 module.exports = router;

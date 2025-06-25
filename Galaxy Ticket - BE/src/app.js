@@ -17,7 +17,10 @@ app.use((req, res, next) => {
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' ? '*' : ["http://localhost:3000", "http://localhost:5173"],
+  origin:
+    process.env.NODE_ENV === "production"
+      ? "*"
+      : ["http://localhost:3000", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -46,7 +49,7 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-
+app.use("/api", require("./routes/auth.route"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/auth", require("./routes/auth.route"));
 app.use("/api/movies", require("./routes/movieRoutes"));
