@@ -97,21 +97,65 @@ exports.createUserByAdmin = async (req, res) => {
   }
 };
 
-// Cập nhật thông tin người dùng (cho mọi role)
+// Cập nhật role của người dùng (chỉ được thay đổi role)
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const updateFields = req.body;
 
-  if (updateFields.password) {
-    updateFields.password = await bcrypt.hash(updateFields.password, 10);
+  console.log("Full request body:", req.body);
+  console.log("Request body keys:", Object.keys(req.body));
+
+  const { role, ...otherFields } = req.body;
+
+  console.log("Extracted role:", role);
+  console.log("Other fields:", otherFields);
+  console.log("Other fields keys:", Object.keys(otherFields));
+
+  // Kiểm tra xem có field nào khác ngoài role không
+  if (Object.keys(otherFields).length > 0) {
+    console.log("Rejected - contains other fields:", otherFields);
+    return res.status(400).json({
+      message:
+        "Không được phép thay đổi thông tin cá nhân của user. Chỉ được thay đổi role.",
+    });
+  }
+
+  // Chỉ cho phép cập nhật role
+  if (!role) {
+    console.log("Rejected - no role provided");
+    return res.status(400).json({ message: "Role là trường bắt buộc" });
+  }
+
+  // Chỉ cho phép thay đổi thành role staff hoặc manager (không được thành member hoặc admin)
+  if (!["staff", "manager"].includes(role)) {
+    console.log("Rejected - invalid role:", role);
+    return res.status(400).json({
+      message:
+        "Chỉ được thay đổi thành staff hoặc manager. Không được thay đổi thành member hoặc admin.",
+    });
   }
 
   try {
-    const updatedUser = await User.findByIdAndUpdate(id, updateFields, {
-      new: true,
-    }).select("-password");
-    res.json({ message: "Cập nhật thành công", user: updatedUser });
+    // Kiểm tra user có tồn tại không
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      console.log("User not found:", id);
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    console.log("Updating user role from", existingUser.role, "to:", role);
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { role }, // Chỉ cập nhật role
+      { new: true }
+    ).select("-password");
+
+    console.log("Update successful:", updatedUser);
+    res.json({
+      message: "Cập nhật role thành công",
+      user: updatedUser,
+    });
   } catch (err) {
+    console.error("Update error:", err);
     res.status(500).json({ message: "Lỗi cập nhật", error: err.message });
   }
 };
