@@ -329,27 +329,25 @@ exports.createBooking = async (req, res) => {
             }
         );
 
-        // Set timeout to auto-cancel booking after 5 minutes if payment is not successful
+        // Set timeout to auto-cancel booking after 2 minutes if payment is not successful
         const timeoutId = setTimeout(async () => {
             try {
                 const currentBooking = await Booking.findById(newBooking._id);
                 if (currentBooking && currentBooking.paymentStatus === 'pending') {
-                    // Check if payment was completed during the 5 minutes
                     const transaction = await Transaction.findOne({
                         bookingId: newBooking._id,
                         status: 'success'
                     });
 
                     if (!transaction) {
-                        // If no successful payment found, cancel the booking
                         currentBooking.paymentStatus = 'cancelled';
                         await currentBooking.save();
 
-                        // Reset seat status back to available
+                        // Lấy danh sách ghế hiện tại của booking để nhả
                         await Seat.updateMany(
                             {
                                 screeningId,
-                                seatNumber: { $in: processedSeatNumbers }
+                                seatNumber: { $in: currentBooking.seatNumbers }
                             },
                             {
                                 status: 'available',
@@ -357,15 +355,16 @@ exports.createBooking = async (req, res) => {
                             }
                         );
 
-                        console.log(`Booking ${newBooking._id} automatically cancelled after 5 minutes due to no payment`);
+                        console.log(`Booking ${newBooking._id} automatically cancelled after 2 minutes due to no payment`);
                     }
                 }
             } catch (error) {
                 console.error('Error in auto-cancellation:', error);
             } finally {
-                delete activeBookingTimeouts[newBooking._id]; // Clean up the timeout ID
+                delete activeBookingTimeouts[newBooking._id];
             }
-        }, 5 * 60 * 1000); // 5 minutes        activeBookingTimeouts[newBooking._id] = timeoutId;
+        }, 2 * 60 * 1000); // 2 phút
+        activeBookingTimeouts[newBooking._id] = timeoutId;
         
         res.status(201).json({
             success: true,
@@ -705,6 +704,46 @@ exports.updateBooking = async (req, res) => {
         // Lưu các thay đổi
         await booking.save();
 
+        // Sau khi await booking.save();
+        if (activeBookingTimeouts[bookingId]) {
+            clearTimeout(activeBookingTimeouts[bookingId]);
+            delete activeBookingTimeouts[bookingId];
+        }
+        activeBookingTimeouts[bookingId] = setTimeout(async () => {
+            try {
+                const currentBooking = await Booking.findById(bookingId);
+                if (currentBooking && currentBooking.paymentStatus === 'pending') {
+                    const transaction = await Transaction.findOne({
+                        bookingId: bookingId,
+                        status: 'success'
+                    });
+
+                    if (!transaction) {
+                        currentBooking.paymentStatus = 'cancelled';
+                        await currentBooking.save();
+
+                        // Lấy danh sách ghế hiện tại của booking để nhả
+                        await Seat.updateMany(
+                            {
+                                screeningId: currentBooking.screeningId,
+                                seatNumber: { $in: currentBooking.seatNumbers }
+                            },
+                            {
+                                status: 'available',
+                                reservedAt: null
+                            }
+                        );
+
+                        console.log(`Booking ${bookingId} automatically cancelled after 2 minutes due to no payment (after update)`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error in auto-cancellation (update):', error);
+            } finally {
+                delete activeBookingTimeouts[bookingId];
+            }
+        }, 2 * 60 * 1000); // 2 phút
+
         // Trả về booking đã cập nhật
         const updatedBooking = await Booking.findById(bookingId)
             .populate({
@@ -892,7 +931,7 @@ exports.updateBookingStatus = async(req, res) => {
             seat.status === 'booked' ||
             (seat.status === 'reserved' &&
                 seat.reservedAt &&
-                new Date() - new Date(seat.reservedAt) < 5 * 60 * 1000 && // ghế được đ ặt dưới 5 phút
+                new Date() - new Date(seat.reservedAt) < 2 * 60 * 1000 && // ghế được đặt dưới 2 phút
                 (!booking._id.equals(seat.bookingId) && seat.bookingId)) // ghế không thuộc booking hiện tại
         );
 
