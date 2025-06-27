@@ -154,11 +154,18 @@ exports.createScreening = async (req, res) => {
     const populatedScreening = await Screening.findById(screening._id)
       .populate("movieId", "title")
       .populate("roomId", "name")
-      .populate("theaterId", "name");
+      .populate("theaterId", "name")
+      .populate("createdBy", "name");
+    // Nhúng tên người tạo vào object
+    const screeningData = populatedScreening.toObject();
+    screeningData.movieTitle = populatedScreening.movieId?.title || null;
+    screeningData.roomName = populatedScreening.roomId?.name || null;
+    screeningData.theaterName = populatedScreening.theaterId?.name || null;
+    screeningData.createdByName = populatedScreening.createdBy?.name || null;
     // Tạo approval request cho suất chiếu mới
     await ApprovalRequest.create({
       type: "screening",
-      requestData: populatedScreening.toObject(),
+      requestData: screeningData,
       referenceId: screening._id,
       status: "pending",
       staffId: req.user.userId,
@@ -262,7 +269,7 @@ exports.updateScreening = async (req, res) => {
     } else if (screening.status === "rejected") {
       updateData.status = "pending";
       updateData.rejectionReason = null;
-      
+
       const populatedScreening = await Screening.findById(screening._id)
         .populate("movieId", "title")
         .populate("roomId", "name")

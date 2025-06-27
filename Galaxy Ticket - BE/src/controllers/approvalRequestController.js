@@ -164,7 +164,8 @@ const updateRequest = async (req, res) => {
         const populatedScreening = await Screening.findById(request.referenceId)
           .populate("movieId", "title")
           .populate("roomId", "name")
-          .populate("theaterId", "name");
+          .populate("theaterId", "name")
+          .populate("createdBy", "name");
 
         if (!populatedScreening) {
           return res.status(404).json({
@@ -173,11 +174,12 @@ const updateRequest = async (req, res) => {
           });
         }
 
-        // Nhúng tên phim/phòng/rạp vào requestData
+        // Nhúng tên phim/phòng/rạp/người tạo vào requestData
         const screeningData = populatedScreening.toObject();
         screeningData.movieTitle = populatedScreening.movieId?.title || null;
         screeningData.roomName = populatedScreening.roomId?.name || null;
         screeningData.theaterName = populatedScreening.theaterId?.name || null;
+        screeningData.createdByName = populatedScreening.createdBy?.name || null;
 
         request.status = status;
         request.managerId = managerId;
