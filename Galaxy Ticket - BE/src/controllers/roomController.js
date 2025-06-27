@@ -16,7 +16,11 @@ exports.createRoom = async (req, res) => {
 exports.getRooms = async (req, res) => {
     try {
         const rooms = await Room.find().populate('theaterId');
-        res.json(rooms);
+        res.status(200).json({
+            success: true,
+            message: 'Get all rooms successfully',
+            data: rooms
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
