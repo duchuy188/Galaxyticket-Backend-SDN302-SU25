@@ -23,7 +23,9 @@ exports.getAllScreenings = async (req, res) => {
     }
     // SỬA Ở ĐÂY: thêm .populate('movieId roomId')
     const screenings = await Screening.find(query)
-      .populate("movieId roomId")
+      .populate("movieId", "title")
+      .populate("roomId", "name")
+      .populate("theaterId", "name")
       .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
