@@ -28,8 +28,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    // 👇 Thêm 2 trường này để hỗ trợ quên mật khẩu
-    resetPasswordToken: {
+
+    otp: {
+      type: String,
+    },
+    otpExpires: {
+      type: Date,
+    },
+
+    resetPasswordOTP: {
       type: String,
     },
     resetPasswordExpires: {
