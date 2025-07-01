@@ -4,7 +4,6 @@ const seatSchema = new mongoose.Schema({
     screeningId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Screening',
-        required: true
     },
     seatNumber: {
         type: String,
@@ -20,6 +19,11 @@ const seatSchema = new mongoose.Schema({
     reservedAt: {
         type: Date,
         default: null
+    },
+    roomId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Room',
+        required: true
     }
 });
 
