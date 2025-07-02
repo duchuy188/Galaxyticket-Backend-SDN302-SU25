@@ -146,13 +146,30 @@ exports.updatePromotion = async (req, res) => {
         // Lấy userId từ thông tin đăng nhập
         const staffId = req.user.userId;
 
-        // Nếu promotion đã được approve, tạo approval request mới
-        if (promotion.status === 'approved') {
+        // Nếu promotion đang pending, cập nhật approval request hiện tại
+        if (promotion.status === 'pending') {
+            const existingRequest = await ApprovalRequest.findOne({
+                referenceId: promotion._id,
+                status: 'pending'
+            });
+
+            if (existingRequest) {
+                existingRequest.requestData = { ...promotion.toObject(), ...updateData };
+                await existingRequest.save();
+            } else {
+                await ApprovalRequest.create({
+                    staffId: staffId,
+                    type: 'promotion',
+                    requestData: { ...promotion.toObject(), ...updateData },
+                    referenceId: promotion._id,
+                    status: 'pending'
+                });
+            }
+        } else if (promotion.status === 'approved') {
             updateData.status = 'pending';
             updateData.approvedBy = null;
             updateData.rejectionReason = null;
 
-            // Tạo approval request mới
             await ApprovalRequest.create({
                 staffId: staffId,
                 type: 'promotion',
@@ -164,7 +181,6 @@ exports.updatePromotion = async (req, res) => {
             updateData.status = 'pending';
             updateData.rejectionReason = null;
 
-            // Tạo approval request mới
             await ApprovalRequest.create({
                 staffId: staffId,
                 type: 'promotion',
@@ -182,9 +198,7 @@ exports.updatePromotion = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: promotion.status === 'pending' ? 
-                'Promotion updated successfully' : 
-                'Promotion update submitted for approval',
+            message: 'Promotion update submitted for approval',
             data: updatedPromotion
         });
     } catch (err) {
@@ -201,15 +215,11 @@ exports.updatePromotion = async (req, res) => {
     }
 };
 
-// Xóa promotion (soft delete)
+// Xóa promotion (chuyển sang pending để duyệt lại)
 exports.deletePromotion = async (req, res) => {
     try {
-        const promotion = await Promotion.findByIdAndUpdate(
-            req.params.id,
-            { isActive: false },
-            { new: true }
-        );
-
+        const promotion = await Promotion.findById(req.params.id);
+        
         if (!promotion) {
             return res.status(404).json({
                 success: false,
@@ -217,10 +227,52 @@ exports.deletePromotion = async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Promotion deleted successfully'
-        });
+        // Nếu promotion đang ở trạng thái approved
+        if (promotion.status === 'approved') {
+            // Tạo approval request mới
+            await ApprovalRequest.create({
+                staffId: req.user.userId,
+                type: 'promotion',
+                requestData: {
+                    ...promotion.toObject(),
+                    status: 'pending',
+                    approvedBy: null,
+                    rejectionReason: null
+                },
+                referenceId: promotion._id,
+                status: 'pending'
+            });
+
+            // Cập nhật promotion về trạng thái pending
+            const updatedPromotion = await Promotion.findByIdAndUpdate(
+                req.params.id,
+                {
+                    status: 'pending',
+                    approvedBy: null,
+                    rejectionReason: null
+                },
+                { new: true }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: 'Promotion has been set to pending for re-approval',
+                data: updatedPromotion
+            });
+        } else {
+            // Nếu không phải approved thì thực hiện soft delete như cũ
+            const deletedPromotion = await Promotion.findByIdAndUpdate(
+                req.params.id,
+                { isActive: false },
+                { new: true }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: 'Promotion deleted successfully',
+                data: deletedPromotion
+            });
+        }
     } catch (err) {
         res.status(500).json({
             success: false,
