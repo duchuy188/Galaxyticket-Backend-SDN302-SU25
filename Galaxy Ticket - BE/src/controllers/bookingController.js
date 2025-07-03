@@ -11,7 +11,7 @@ const User = require('../models/User');
 const activeBookingTimeouts = {};
 
 // Get all bookings with filters
-exports.getBookings = async (req, res) => {
+exports.getBookings = async(req, res) => {
     try {
         const {
             userId,
@@ -84,15 +84,16 @@ exports.getBookings = async (req, res) => {
 };
 
 // Create a new booking
-exports.createBooking = async (req, res) => {
-    try {        const { screeningId, seatNumbers: rawSeatNumbers, code } = req.body;
+exports.createBooking = async(req, res) => {
+    try {
+        const { screeningId, seatNumbers: rawSeatNumbers, code } = req.body;
         const userId = req.user.userId; // Get userId from authenticated user
 
         // Validate required fields
         if (!screeningId || !rawSeatNumbers) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                message: 'Thiếu thông tin bắt buộc' 
+                message: 'Thiếu thông tin bắt buộc'
             });
         }
 
@@ -152,12 +153,12 @@ exports.createBooking = async (req, res) => {
 
         if (existingBookings.length > 0 && !isCurrentBooking) {
             return res.status(400).json({ message: 'One or more seats are already booked' });
-        }        // Get all seats for this screening to check the single seat rule
-        const allSeats = await Seat.find({ 
+        } // Get all seats for this screening to check the single seat rule
+        const allSeats = await Seat.find({
             screeningId,
-            status: { $in: ['available', 'booked', 'reserved'] } 
+            status: { $in: ['available', 'booked', 'reserved'] }
         });
-        
+
         // Organize seats by row
         const seatsByRow = {};
         allSeats.forEach(seat => {
@@ -171,7 +172,7 @@ exports.createBooking = async (req, res) => {
                 numericPart: parseInt(seat.seatNumber.substring(1))
             });
         });
-        
+
         // Sort seats in each row
         Object.keys(seatsByRow).forEach(row => {
             seatsByRow[row].sort((a, b) => a.numericPart - b.numericPart);
@@ -318,55 +319,48 @@ exports.createBooking = async (req, res) => {
         const newBooking = await Booking.create(bookingData);
 
         // Update seat status to 'reserved'
-        await Seat.updateMany(
-            {
-                screeningId,
-                seatNumber: { $in: processedSeatNumbers }
-            },
-            {
-                status: 'reserved',
-                reservedAt: new Date()
-            }
-        );
+        await Seat.updateMany({
+            screeningId,
+            seatNumber: { $in: processedSeatNumbers }
+        }, {
+            status: 'reserved',
+            reservedAt: new Date()
+        });
 
-        // Set timeout to auto-cancel booking after 5 minutes if payment is not successful
-        const timeoutId = setTimeout(async () => {
+        // Set timeout to auto-cancel booking after 2 minutes if payment is not successful
+        const timeoutId = setTimeout(async() => {
             try {
                 const currentBooking = await Booking.findById(newBooking._id);
                 if (currentBooking && currentBooking.paymentStatus === 'pending') {
-                    // Check if payment was completed during the 5 minutes
                     const transaction = await Transaction.findOne({
                         bookingId: newBooking._id,
                         status: 'success'
                     });
 
                     if (!transaction) {
-                        // If no successful payment found, cancel the booking
                         currentBooking.paymentStatus = 'cancelled';
                         await currentBooking.save();
 
-                        // Reset seat status back to available
-                        await Seat.updateMany(
-                            {
-                                screeningId,
-                                seatNumber: { $in: processedSeatNumbers }
-                            },
-                            {
-                                status: 'available',
-                                reservedAt: null
-                            }
-                        );
+                        // Lấy danh sách ghế hiện tại của booking để nhả
+                        await Seat.updateMany({
+                            screeningId,
+                            seatNumber: { $in: currentBooking.seatNumbers }
+                        }, {
+                            status: 'available',
+                            reservedAt: null
+                        });
 
-                        console.log(`Booking ${newBooking._id} automatically cancelled after 5 minutes due to no payment`);
+                        console.log(`Booking ${newBooking._id} automatically cancelled after 2 minutes due to no payment`);
                     }
                 }
             } catch (error) {
                 console.error('Error in auto-cancellation:', error);
             } finally {
-                delete activeBookingTimeouts[newBooking._id]; // Clean up the timeout ID
+                delete activeBookingTimeouts[newBooking._id];
             }
-        }, 5 * 60 * 1000); // 5 minutes        activeBookingTimeouts[newBooking._id] = timeoutId;
-        
+        }, 2 * 60 * 1000); // 2 phút
+        activeBookingTimeouts[newBooking._id] = timeoutId;
+
         res.status(201).json({
             success: true,
             message: 'Booking created successfully',
@@ -389,7 +383,7 @@ exports.createBooking = async (req, res) => {
 };
 
 // Cancel a booking
-exports.cancelBooking = async (req, res) => {
+exports.cancelBooking = async(req, res) => {
     try {
         const { bookingId } = req.params;
         const booking = await Booking.findById(bookingId)
@@ -414,16 +408,13 @@ exports.cancelBooking = async (req, res) => {
         await booking.save();
 
         // Reset seat status back to available
-        await Seat.updateMany(
-            {
-                screeningId: booking.screeningId,
-                seatNumber: { $in: booking.seatNumbers }
-            },
-            {
-                status: 'available',
-                reservedAt: null
-            }
-        );
+        await Seat.updateMany({
+            screeningId: booking.screeningId,
+            seatNumber: { $in: booking.seatNumbers }
+        }, {
+            status: 'available',
+            reservedAt: null
+        });
 
         res.json({
             success: true,
@@ -439,7 +430,7 @@ exports.cancelBooking = async (req, res) => {
 };
 
 // Update a booking
-exports.updateBooking = async (req, res) => {
+exports.updateBooking = async(req, res) => {
     try {
         const { bookingId } = req.params;
         const { seatNumbers, code } = req.body;
@@ -511,11 +502,11 @@ exports.updateBooking = async (req, res) => {
             const newSeats = seatNumbers.filter(seat => !booking.seatNumbers.includes(seat));
 
             // Kiểm tra quy tắc ghế lẻ
-            const allSeats = await Seat.find({ 
+            const allSeats = await Seat.find({
                 screeningId: booking.screeningId,
-                status: { $in: ['available', 'booked', 'reserved'] } 
+                status: { $in: ['available', 'booked', 'reserved'] }
             });
-            
+
             // Organize seats by row
             const seatsByRow = {};
             allSeats.forEach(seat => {
@@ -529,7 +520,7 @@ exports.updateBooking = async (req, res) => {
                     numericPart: parseInt(seat.seatNumber.substring(1))
                 });
             });
-            
+
             // Sort seats in each row
             Object.keys(seatsByRow).forEach(row => {
                 seatsByRow[row].sort((a, b) => a.numericPart - b.numericPart);
@@ -606,30 +597,24 @@ exports.updateBooking = async (req, res) => {
 
             // Giải phóng ghế cũ
             if (oldSeats.length > 0) {
-                await Seat.updateMany(
-                    {
-                        screeningId: booking.screeningId,
-                        seatNumber: { $in: oldSeats }
-                    },
-                    {
-                        status: 'available',
-                        reservedAt: null
-                    }
-                );
+                await Seat.updateMany({
+                    screeningId: booking.screeningId,
+                    seatNumber: { $in: oldSeats }
+                }, {
+                    status: 'available',
+                    reservedAt: null
+                });
             }
 
             // Đặt ghế mới
             if (newSeats.length > 0) {
-                await Seat.updateMany(
-                    {
-                        screeningId: booking.screeningId,
-                        seatNumber: { $in: newSeats }
-                    },
-                    {
-                        status: 'reserved',
-                        reservedAt: new Date()
-                    }
-                );
+                await Seat.updateMany({
+                    screeningId: booking.screeningId,
+                    seatNumber: { $in: newSeats }
+                }, {
+                    status: 'reserved',
+                    reservedAt: new Date()
+                });
             }
 
             booking.seatNumbers = seatNumbers;
@@ -705,6 +690,43 @@ exports.updateBooking = async (req, res) => {
         // Lưu các thay đổi
         await booking.save();
 
+        // Sau khi await booking.save();
+        if (activeBookingTimeouts[bookingId]) {
+            clearTimeout(activeBookingTimeouts[bookingId]);
+            delete activeBookingTimeouts[bookingId];
+        }
+        activeBookingTimeouts[bookingId] = setTimeout(async() => {
+            try {
+                const currentBooking = await Booking.findById(bookingId);
+                if (currentBooking && currentBooking.paymentStatus === 'pending') {
+                    const transaction = await Transaction.findOne({
+                        bookingId: bookingId,
+                        status: 'success'
+                    });
+
+                    if (!transaction) {
+                        currentBooking.paymentStatus = 'cancelled';
+                        await currentBooking.save();
+
+                        // Lấy danh sách ghế hiện tại của booking để nhả
+                        await Seat.updateMany({
+                            screeningId: currentBooking.screeningId,
+                            seatNumber: { $in: currentBooking.seatNumbers }
+                        }, {
+                            status: 'available',
+                            reservedAt: null
+                        });
+
+                        console.log(`Booking ${bookingId} automatically cancelled after 2 minutes due to no payment (after update)`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error in auto-cancellation (update):', error);
+            } finally {
+                delete activeBookingTimeouts[bookingId];
+            }
+        }, 2 * 60 * 1000); // 2 phút
+
         // Trả về booking đã cập nhật
         const updatedBooking = await Booking.findById(bookingId)
             .populate({
@@ -725,18 +747,19 @@ exports.updateBooking = async (req, res) => {
         });
     } catch (error) {
         console.error('Update booking error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: 'Lỗi khi cập nhật đặt vé',
-            error: error.message 
+            error: error.message
         });
     }
 };
 
 // Get user's bookings
-exports.getUserBookings = async (req, res) => {
+exports.getUserBookings = async(req, res) => {
 
-    try {        const userId = req.user.userId; // Changed from _id to userId to match JWT payload
+    try {
+        const userId = req.user.userId; // Changed from _id to userId to match JWT payload
 
         if (!userId) {
             return res.status(400).json({
@@ -752,9 +775,9 @@ exports.getUserBookings = async (req, res) => {
         };
 
         // First find bookings without populate to verify query
-        const rawBookings = await Booking.find(query); 
+        const rawBookings = await Booking.find(query);
 
-         // Now try with populate
+        // Now try with populate
         const bookings = await Booking.find(query)
             .populate({
                 path: 'screeningId',
@@ -782,7 +805,8 @@ exports.getUserBookings = async (req, res) => {
                     bookings: []
                 }
             });
-        }        const bookingsWithQrCode = await Promise.all(bookings.map(async booking => {
+        }
+        const bookingsWithQrCode = await Promise.all(bookings.map(async booking => {
             try {
                 if (!booking.screeningId) {
                     console.log('Warning: screening not found for booking:', booking._id);
@@ -802,10 +826,11 @@ exports.getUserBookings = async (req, res) => {
 
                 const transformedBooking = {
                     ...booking.toObject(),
-                    movieTitle: booking.screeningId.movieId?.title || 'N/A',
-                    moviePoster: booking.screeningId.movieId?.poster || 'N/A',
-                    roomName: booking.screeningId.roomId?.name || 'N/A',
-                    screeningTime: booking.screeningId.startTime || null,
+                    movieTitle: booking.screeningId && booking.screeningId.movieId ? booking.screeningId.movieId.title : 'N/A',
+                    moviePoster: booking.screeningId && booking.screeningId.movieId ? booking.screeningId.movieId.poster : 'N/A',
+                    roomName: booking.screeningId && booking.screeningId.roomId ? booking.screeningId.roomId.name : 'N/A',
+                    theaterName: (booking.screeningId && booking.screeningId.roomId && booking.screeningId.roomId.theaterId && booking.screeningId.roomId.theaterId.name) ? booking.screeningId.roomId.theaterId.name : 'N/A',
+                    screeningTime: booking.screeningId ? booking.screeningId.startTime : null,
                     seatNumbers: booking.seatNumbers,
                     totalPrice: booking.totalPrice || 0,
                     bookingDate: booking.createdAt,
@@ -816,7 +841,7 @@ exports.getUserBookings = async (req, res) => {
                 console.error('Error transforming booking:', error);
                 return null;
             }
-        }));        // Filter out any null values from failed transformations
+        })); // Filter out any null values from failed transformations
         const validBookings = bookingsWithQrCode.filter(booking => booking !== null);
 
         res.json({
@@ -892,7 +917,7 @@ exports.updateBookingStatus = async(req, res) => {
             seat.status === 'booked' ||
             (seat.status === 'reserved' &&
                 seat.reservedAt &&
-                new Date() - new Date(seat.reservedAt) < 5 * 60 * 1000 && // ghế được đ ặt dưới 5 phút
+                new Date() - new Date(seat.reservedAt) < 2 * 60 * 1000 && // ghế được đặt dưới 2 phút
                 (!booking._id.equals(seat.bookingId) && seat.bookingId)) // ghế không thuộc booking hiện tại
         );
 
@@ -906,7 +931,7 @@ exports.updateBookingStatus = async(req, res) => {
         // Cập nhật trạng thái đặt vé thành đã thanh toán
         booking.paymentStatus = 'paid';
         await booking.save();
-        
+
         // Xóa thời gian chờ tự động hủy nếu nó tồn tại
         if (activeBookingTimeouts[bookingId]) {
             clearTimeout(activeBookingTimeouts[bookingId]);
@@ -927,7 +952,7 @@ exports.updateBookingStatus = async(req, res) => {
         const qrContent = [
             `Mã khuyến mãi: ${booking._id.toString()}`,
             `Phim: ${booking.screeningId.movieId.title}`,
-            `Thời gian chiếu phim: Ngày: ${new Date(booking.screeningId.startTime.getTime() - (7 * 60 * 60 * 1000)).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} vào lúc: ${new Date(booking.screeningId.startTime.getTime() - (7 * 60 * 60 * 1000)).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })}`,
+            `Thời gian chiếu phim: Ngày: ${new Date(booking.screeningId.startTime).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} vào lúc: ${new Date(booking.screeningId.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })}`,
             `Phòng: ${booking.screeningId.roomId.name}`,
             `Ghế: ${booking.seatNumbers.join(', ')}`,
             `Tổng tiền: ${booking.totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}`,
@@ -965,10 +990,11 @@ exports.updateBookingStatus = async(req, res) => {
             message: 'Cập nhật trạng thái đặt vé thành đã thanh toán thành công',
             booking: {
                 ...booking.toObject(), // Chuyển đổi tài liệu mongoose thành đối tượng thuần
-                movieTitle: booking.screeningId.movieId.title,
-                moviePoster: booking.screeningId.movieId.poster,
-                roomName: booking.screeningId.roomId.name,
-                screeningTime: booking.screeningId.startTime,
+                movieTitle: booking.screeningId && booking.screeningId.movieId ? booking.screeningId.movieId.title : 'N/A',
+                moviePoster: booking.screeningId && booking.screeningId.movieId ? booking.screeningId.movieId.poster : 'N/A',
+                roomName: booking.screeningId && booking.screeningId.roomId ? booking.screeningId.roomId.name : 'N/A',
+                theaterName: (booking.screeningId && booking.screeningId.roomId && booking.screeningId.roomId.theaterId && booking.screeningId.roomId.theaterId.name) ? booking.screeningId.roomId.theaterId.name : 'N/A',
+                screeningTime: booking.screeningId ? booking.screeningId.startTime : null,
                 seatNumbers: booking.seatNumbers,
                 totalPrice: booking.totalPrice,
                 bookingDate: booking.createdAt,
@@ -1009,7 +1035,8 @@ exports.sendTicketEmail = async(req, res) => {
             });
 
         if (!booking) {
-            console.log('Booking not found:', bookingId);            return res.status(404).json({
+            console.log('Booking not found:', bookingId);
+            return res.status(404).json({
                 success: false,
                 message: 'Không tìm thấy booking'
             });
@@ -1017,7 +1044,8 @@ exports.sendTicketEmail = async(req, res) => {
 
         // Kiểm tra xem người dùng có quyền xem booking này không
         if (booking.userId.toString() !== userId.toString()) {
-            console.log('User not authorized. Booking userId:', booking.userId, 'Request userId:', userId);            return res.status(403).json({
+            console.log('User not authorized. Booking userId:', booking.userId, 'Request userId:', userId);
+            return res.status(403).json({
                 success: false,
                 message: 'Bạn không có quyền truy cập booking này'
             });

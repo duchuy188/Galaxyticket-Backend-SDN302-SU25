@@ -1,10 +1,10 @@
 require('dotenv').config();
 
 const config = {
-    vnp_TmnCode: "NU8CTA9G",
-    vnp_HashSecret: "3D2NVR3HENGTW25POFRQP04FRHXJCIZK",
-    vnp_Url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-    vnp_ReturnUrl: "http://localhost:5173/confirmation"
+    vnp_TmnCode: process.env.VNP_TMN_CODE,
+    vnp_HashSecret: process.env.VNP_HASH_SECRET,
+    vnp_Url: process.env.VNP_URL,
+    vnp_ReturnUrl: process.env.VNP_RETURN_URL
 };
 
 module.exports = config;

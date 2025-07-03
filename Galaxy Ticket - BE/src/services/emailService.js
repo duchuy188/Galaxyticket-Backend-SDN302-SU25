@@ -1,7 +1,7 @@
 const emailjs = require('@emailjs/nodejs');
 require('dotenv').config();
 
-const sendMovieTicket = async (userEmail, ticketData) => {
+const sendMovieTicket = async(userEmail, ticketData) => {
     try {
         console.log('Starting to send email to:', userEmail);
 
@@ -32,8 +32,8 @@ const sendMovieTicket = async (userEmail, ticketData) => {
         const day = screeningDate.getUTCDate();
         const month = screeningDate.getUTCMonth() + 1; // getUTCMonth trả về 0-11
         const year = screeningDate.getUTCFullYear();
-        const hours = screeningDate.getUTCHours();
-        const minutes = screeningDate.getUTCMinutes();
+        const hours = screeningDate.getHours();
+        const minutes = screeningDate.getMinutes();
 
         const formattedDay = day < 10 ? '0' + day : day;
         const formattedMonth = month < 10 ? '0' + month : month;
@@ -74,8 +74,7 @@ const sendMovieTicket = async (userEmail, ticketData) => {
         const result = await emailjs.send(
             serviceId,
             templateId,
-            templateParams,
-            {
+            templateParams, {
                 publicKey: publicKey,
                 privateKey: privateKey
             }
@@ -97,4 +96,4 @@ const sendMovieTicket = async (userEmail, ticketData) => {
 
 module.exports = {
     sendMovieTicket
-}; 
+};

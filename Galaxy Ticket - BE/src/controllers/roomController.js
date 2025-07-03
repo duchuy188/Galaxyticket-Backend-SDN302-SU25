@@ -1,11 +1,15 @@
 const Room = require('../models/Room');
+const Seat = require('../models/Seat');
 
 // Create a new room
-exports.createRoom = async (req, res) => {
+exports.createRoom = async(req, res) => {
     try {
         const { theaterId, name, totalSeats } = req.body;
         const room = new Room({ theaterId, name, totalSeats });
         await room.save();
+
+        // ĐÃ XOÁ: Không tạo ghế tự động cho phòng nữa
+
         res.status(201).json(room);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -13,7 +17,7 @@ exports.createRoom = async (req, res) => {
 };
 
 // Get all rooms
-exports.getRooms = async (req, res) => {
+exports.getRooms = async(req, res) => {
     try {
         const rooms = await Room.find().populate('theaterId');
         res.status(200).json({
@@ -27,7 +31,7 @@ exports.getRooms = async (req, res) => {
 };
 
 // Get a single room by ID
-exports.getRoomById = async (req, res) => {
+exports.getRoomById = async(req, res) => {
     try {
         const room = await Room.findById(req.params.id).populate('theaterId');
         if (!room) return res.status(404).json({ message: 'Room not found' });
@@ -38,13 +42,11 @@ exports.getRoomById = async (req, res) => {
 };
 
 // Update a room
-exports.updateRoom = async (req, res) => {
+exports.updateRoom = async(req, res) => {
     try {
         const { theaterId, name, totalSeats } = req.body;
         const room = await Room.findByIdAndUpdate(
-            req.params.id,
-            { theaterId, name, totalSeats },
-            { new: true, runValidators: true }
+            req.params.id, { theaterId, name, totalSeats }, { new: true, runValidators: true }
         );
         if (!room) return res.status(404).json({ message: 'Room not found' });
         res.json(room);
@@ -54,7 +56,7 @@ exports.updateRoom = async (req, res) => {
 };
 
 // Delete a room
-exports.deleteRoom = async (req, res) => {
+exports.deleteRoom = async(req, res) => {
     try {
         const room = await Room.findByIdAndDelete(req.params.id);
         if (!room) return res.status(404).json({ message: 'Room not found' });
