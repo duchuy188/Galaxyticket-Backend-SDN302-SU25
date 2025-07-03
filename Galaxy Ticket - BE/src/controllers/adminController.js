@@ -126,13 +126,13 @@ exports.updateUser = async (req, res) => {
   }
 
   // Chỉ cho phép thay đổi thành role staff hoặc manager (không được thành member hoặc admin)
-  if (!["staff", "manager"].includes(role)) {
-    console.log("Rejected - invalid role:", role);
-    return res.status(400).json({
-      message:
-        "Chỉ được thay đổi thành staff hoặc manager. Không được thay đổi thành member hoặc admin.",
-    });
-  }
+  // if (!["staff", "manager"].includes(role)) {
+  //   console.log("Rejected - invalid role:", role);
+  //   return res.status(400).json({
+  //     message:
+  //       "Chỉ được thay đổi thành staff hoặc manager. Không được thay đổi thành member hoặc admin.",
+  //   });
+  // }
 
   try {
     // Kiểm tra user có tồn tại không
