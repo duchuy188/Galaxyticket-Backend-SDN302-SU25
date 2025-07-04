@@ -102,6 +102,8 @@ const updateRequest = async (req, res) => {
         existingMovie.duration = request.requestData.duration;
         existingMovie.posterUrl = request.requestData.posterUrl;
         existingMovie.trailerUrl = request.requestData.trailerUrl;
+        existingMovie.releaseDate = request.requestData.releaseDate;
+        existingMovie.endDate = request.requestData.endDate;
         existingMovie.country = request.requestData.country;
         existingMovie.showingStatus = request.requestData.showingStatus;
         existingMovie.producer = request.requestData.producer;
