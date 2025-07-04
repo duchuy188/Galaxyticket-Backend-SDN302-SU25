@@ -72,6 +72,24 @@ const movieSchema = new mongoose.Schema(
         message: "Release date must be in the future",
       },
     },
+    endDate: {
+      type: Date,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          
+          const endDate = new Date(v);
+          endDate.setHours(0, 0, 0, 0);
+          
+          const releaseDate = new Date(this.releaseDate);
+          releaseDate.setHours(0, 0, 0, 0);
+          
+          return endDate >= releaseDate;
+        },
+        message: "End date must be after release date",
+      },
+      default: null,
+    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

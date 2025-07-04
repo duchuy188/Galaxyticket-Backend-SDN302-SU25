@@ -90,6 +90,10 @@
  *               releaseDate:
  *                 type: string
  *                 format: date-time
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Movie end date (must be after release date)
  *               country:
  *                 type: string
  *               showingStatus:
@@ -178,6 +182,10 @@
  *               releaseDate:
  *                 type: string
  *                 format: date-time
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Movie end date (must be after release date)
  *               country:
  *                 type: string
  *               showingStatus:

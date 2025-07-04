@@ -53,6 +53,12 @@
  *           format: date
  *           description: Movie release date
  *           example: "2024-03-27"
+ *         endDate:
+ *           type: string
+ *           format: date
+ *           description: Movie end date (when movie will stop showing)
+ *           example: "2024-04-27"
+ *           nullable: true
  *         status:
  *           type: string
  *           enum: ['pending', 'approved', 'rejected']

@@ -8,6 +8,7 @@ const swaggerUi = require("swagger-ui-express");
 const { swaggerSpec, swaggerUiOptions } = require("./config/swagger/swagger");
 const swaggerAuth = require("./middlewares/swaggerAuth.middleware");
 const screeningRoutes = require("./routes/screeningRoutes");
+const { updateMovieShowingStatus } = require("./middlewares/movieStatus.middleware");
 
 const app = express();
 app.use((req, res, next) => {
@@ -54,7 +55,7 @@ app.get("/", (req, res) => {
 app.use("/api", require("./routes/auth.route"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/auth", require("./routes/auth.route"));
-app.use("/api/movies", require("./routes/movieRoutes"));
+app.use("/api/movies", updateMovieShowingStatus, require("./routes/movieRoutes"));
 app.use("/api/approval-requests", require("./routes/approvalRequestRoutes"));
 app.use("/api/bookings", require("./routes/bookingRoutes"));
 app.use("/api/seats", require("./routes/seatRoutes"));

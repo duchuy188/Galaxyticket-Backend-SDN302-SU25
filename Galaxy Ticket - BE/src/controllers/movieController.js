@@ -81,6 +81,7 @@ const createMovie = async (req, res) => {
       genre,
       duration,
       releaseDate,
+      endDate,
       country,
       trailerUrl,
       showingStatus,
@@ -167,6 +168,14 @@ const createMovie = async (req, res) => {
       }
     }
 
+    // Validate endDate if provided
+    if (endDate && new Date(endDate) <= new Date(releaseDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "End date must be after release date",
+      });
+    }
+
     // Upload poster to cloud
     const posterUrl = await uploadImage(req.file);
 
@@ -178,6 +187,7 @@ const createMovie = async (req, res) => {
       posterUrl,
       trailerUrl,
       releaseDate,
+      endDate,
       country,
       showingStatus: showingStatus || "coming-soon",
       status: "pending",
@@ -285,6 +295,18 @@ const updateMovie = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: 'Cannot change status directly from coming-soon to ended. Must go through now-showing first'
+        });
+      }
+    }
+
+ 
+    if (updateData.endDate) {
+      const releaseDate = updateData.releaseDate || movie.releaseDate;
+      
+      if (new Date(updateData.endDate) <= new Date(releaseDate)) {
+        return res.status(400).json({
+          success: false,
+          message: "End date must be after release date",
         });
       }
     }
