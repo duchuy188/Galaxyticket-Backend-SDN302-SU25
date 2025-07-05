@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { uploadAvatar } = require("../services/uploadService");
 
 exports.getAllUsers = async (req, res) => {
   const users = await User.find().select("-password");
@@ -13,7 +14,13 @@ exports.getProfile = async (req, res) => {
 
 // User update profile của chính mình (không được sửa role)
 exports.updateProfile = async (req, res) => {
+  // Kiểm tra req.body trước khi destructure
+  if (!req.body) {
+    return res.status(400).json({ message: "Thiếu dữ liệu gửi lên" });
+  }
+
   const { name, email, phone, password, ...otherFields } = req.body;
+  const avatarFile = req.file; // Lấy file avatar từ multer
 
   // Không cho phép sửa role
   if (otherFields.role) {
@@ -25,7 +32,7 @@ exports.updateProfile = async (req, res) => {
   // Không cho phép sửa các field khác không được định nghĩa
   if (Object.keys(otherFields).length > 0) {
     return res.status(400).json({
-      message: "Chỉ được cập nhật name, email, phone, password",
+      message: "Chỉ được cập nhật name, email, phone, password, avatar",
     });
   }
 
@@ -38,6 +45,17 @@ exports.updateProfile = async (req, res) => {
     if (phone !== undefined) updateFields.phone = phone;
     if (password !== undefined) {
       updateFields.password = await bcrypt.hash(password, 10);
+    }
+
+    // Xử lý upload avatar nếu có
+    if (avatarFile) {
+      try {
+        const avatarUrl = await uploadAvatar(avatarFile);
+        updateFields.avatar = avatarUrl;
+      } catch (uploadError) {
+        console.error("Lỗi upload avatar:", uploadError);
+        return res.status(400).json({ message: "Lỗi upload avatar" });
+      }
     }
 
     // Kiểm tra email đã tồn tại chưa (nếu có thay đổi email)
@@ -127,6 +145,27 @@ exports.changePassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Lỗi thay đổi mật khẩu",
+      error: err.message,
+    });
+  }
+};
+
+// User xóa avatar
+exports.removeAvatar = async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      { avatar: null },
+      { new: true }
+    ).select("-password");
+
+    res.json({
+      message: "Xóa avatar thành công",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Lỗi xóa avatar",
       error: err.message,
     });
   }

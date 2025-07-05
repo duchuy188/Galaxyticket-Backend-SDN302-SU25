@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
+const { uploadAvatar } = require("../services/uploadService");
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -16,6 +18,16 @@ exports.login = async (req, res) => {
       return res
         .status(401)
         .json({ message: "Email hoặc mật khẩu không đúng" });
+    }
+
+    // Kiểm tra tài khoản có bị khóa không
+    if (!user.status) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin để được hỗ trợ.",
+        });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -39,7 +51,9 @@ exports.login = async (req, res) => {
         fullName: user.name, // hoặc đổi backend field thành fullName
         email: user.email,
         phone: user.phone,
+        avatar: user.avatar,
         role: user.role,
+        status: user.status,
       },
       token,
     });
@@ -50,7 +64,13 @@ exports.login = async (req, res) => {
 };
 
 exports.register = async (req, res) => {
+  // Kiểm tra req.body trước khi destructure
+  if (!req.body) {
+    return res.status(400).json({ message: "Thiếu dữ liệu gửi lên" });
+  }
+
   const { name, email, password, phone } = req.body;
+  const avatarFile = req.file; // Lấy file avatar từ multer
 
   if (!name || !email || !password || !phone) {
     return res.status(400).json({ message: "Vui lòng nhập đủ thông tin" });
@@ -65,11 +85,23 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Xử lý upload avatar nếu có
+    let avatarUrl = null;
+    if (avatarFile) {
+      try {
+        avatarUrl = await uploadAvatar(avatarFile);
+      } catch (uploadError) {
+        console.error("Lỗi upload avatar:", uploadError);
+        return res.status(400).json({ message: "Lỗi upload avatar" });
+      }
+    }
+
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       phone,
+      avatar: avatarUrl,
       role: "member", // mặc định là member
     });
 
@@ -89,6 +121,7 @@ exports.register = async (req, res) => {
         fullName: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
+        avatar: newUser.avatar,
         role: newUser.role,
       },
       token,
