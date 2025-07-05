@@ -4,6 +4,7 @@ const Movie = require('../models/Movie');
 const updateMovieShowingStatus = async (req, res, next) => {
     try {
         const now = new Date();
+        console.log('Middleware - Current date:', now);
         
         // Cập nhật phim từ coming-soon sang now-showing khi đến ngày khởi chiếu
         const resultToNowShowing = await Movie.updateMany(
@@ -22,11 +23,10 @@ const updateMovieShowingStatus = async (req, res, next) => {
             console.log(`Updated ${resultToNowShowing.modifiedCount} movies to now-showing`);
         }
         
-        
+        // Sửa lại điều kiện để tránh ghi đè
         const resultToEnded = await Movie.updateMany(
             {
-                endDate: { $lte: now },
-                endDate: { $ne: null },
+                endDate: { $lte: now, $ne: null }, // Kết hợp hai điều kiện
                 showingStatus: 'now-showing',
                 status: 'approved',
                 isActive: true
