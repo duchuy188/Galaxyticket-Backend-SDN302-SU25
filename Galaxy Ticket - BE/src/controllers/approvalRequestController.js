@@ -110,6 +110,13 @@ const updateRequest = async (req, res) => {
         existingMovie.directors = request.requestData.directors;
         existingMovie.actors = request.requestData.actors;
 
+        // Kiểm tra xem có cần cập nhật trạng thái hiển thị dựa trên ngày không
+        const now = new Date();
+        if (existingMovie.endDate && now >= new Date(existingMovie.endDate) && 
+            existingMovie.showingStatus === 'now-showing') {
+          existingMovie.showingStatus = 'ended';
+        }
+
         existingMovie.status = status;
         existingMovie.approvedBy = managerId;
         existingMovie.rejectionReason =
@@ -118,6 +125,8 @@ const updateRequest = async (req, res) => {
         const updatedMovie = await existingMovie.save({
           validateBeforeSave: false,
         });
+
+        console.log('Final movie status after save:', updatedMovie.showingStatus);
 
         request.status = status;
         request.managerId = managerId;
