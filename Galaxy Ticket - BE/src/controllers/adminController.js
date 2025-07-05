@@ -104,35 +104,29 @@ exports.updateUser = async (req, res) => {
   console.log("Full request body:", req.body);
   console.log("Request body keys:", Object.keys(req.body));
 
-  const { role, ...otherFields } = req.body;
+  const { role, status, ...otherFields } = req.body;
 
   console.log("Extracted role:", role);
+  console.log("Extracted status:", status);
   console.log("Other fields:", otherFields);
   console.log("Other fields keys:", Object.keys(otherFields));
 
-  // Kiểm tra xem có field nào khác ngoài role không
+  // Kiểm tra xem có field nào khác ngoài role và status không
   if (Object.keys(otherFields).length > 0) {
     console.log("Rejected - contains other fields:", otherFields);
     return res.status(400).json({
       message:
-        "Không được phép thay đổi thông tin cá nhân của user. Chỉ được thay đổi role.",
+        "Không được phép thay đổi thông tin cá nhân của user. Chỉ được thay đổi role và status.",
     });
   }
 
-  // Chỉ cho phép cập nhật role
-  if (!role) {
-    console.log("Rejected - no role provided");
-    return res.status(400).json({ message: "Role là trường bắt buộc" });
+  // Kiểm tra ít nhất phải có role hoặc status
+  if (!role && status === undefined) {
+    console.log("Rejected - no role or status provided");
+    return res
+      .status(400)
+      .json({ message: "Role hoặc status là trường bắt buộc" });
   }
-
-  // Chỉ cho phép thay đổi thành role staff hoặc manager (không được thành member hoặc admin)
-  // if (!["staff", "manager"].includes(role)) {
-  //   console.log("Rejected - invalid role:", role);
-  //   return res.status(400).json({
-  //     message:
-  //       "Chỉ được thay đổi thành staff hoặc manager. Không được thay đổi thành member hoặc admin.",
-  //   });
-  // }
 
   try {
     // Kiểm tra user có tồn tại không
@@ -142,21 +136,104 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    console.log("Updating user role from", existingUser.role, "to:", role);
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { role }, // Chỉ cập nhật role
-      { new: true }
-    ).select("-password");
+    // Tạo object update
+    const updateFields = {};
+    if (role !== undefined) updateFields.role = role;
+    if (status !== undefined) updateFields.status = status;
+
+    console.log("Updating user:", updateFields);
+    const updatedUser = await User.findByIdAndUpdate(id, updateFields, {
+      new: true,
+    }).select("-password");
 
     console.log("Update successful:", updatedUser);
     res.json({
-      message: "Cập nhật role thành công",
+      message: "Cập nhật thành công",
       user: updatedUser,
     });
   } catch (err) {
     console.error("Update error:", err);
     res.status(500).json({ message: "Lỗi cập nhật", error: err.message });
+  }
+};
+
+// Lock account (khóa tài khoản)
+exports.lockUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Kiểm tra user có tồn tại không
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Không cho phép khóa admin khác
+    if (existingUser.role === "admin") {
+      return res
+        .status(403)
+        .json({ message: "Không được phép khóa tài khoản admin khác" });
+    }
+
+    // Không cho phép khóa chính mình
+    if (existingUser._id.toString() === req.user.userId) {
+      return res
+        .status(403)
+        .json({ message: "Không được phép khóa tài khoản của chính mình" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { status: false },
+      { new: true }
+    ).select("-password");
+
+    res.json({
+      message: "Khóa tài khoản thành công",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi khóa tài khoản", error: err.message });
+  }
+};
+
+// Unlock account (mở khóa tài khoản)
+exports.unlockUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Kiểm tra user có tồn tại không
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { status: true },
+      { new: true }
+    ).select("-password");
+
+    res.json({
+      message: "Mở khóa tài khoản thành công",
+      user: updatedUser,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Lỗi mở khóa tài khoản", error: err.message });
+  }
+};
+
+// Lấy danh sách tất cả users với status
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Lỗi lấy danh sách users", error: err.message });
   }
 };
 

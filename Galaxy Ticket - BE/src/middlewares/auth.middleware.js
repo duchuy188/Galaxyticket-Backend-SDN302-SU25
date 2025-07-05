@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 exports.authenticate = (req, res, next) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
@@ -59,4 +60,27 @@ exports.requireRole = (role) => {
     console.log("Role check passed");
     next();
   };
+};
+
+// Kiểm tra user có bị khóa không
+exports.checkUserStatus = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    if (!user.status) {
+      return res.status(403).json({
+        message:
+          "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin để được hỗ trợ.",
+      });
+    }
+
+    next();
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Lỗi kiểm tra trạng thái tài khoản" });
+  }
 };
