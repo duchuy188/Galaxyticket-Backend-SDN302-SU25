@@ -229,14 +229,16 @@ exports.updateScreening = async(req, res) => {
             updateData.endTime = new Date(updateData.endTime);
         }
 
-        // Nếu không truyền endTime nhưng có startTime hoặc movieId, tự động tính lại endTime
-        if (!updateData.endTime && (updateData.startTime || updateData.movieId)) {
+        // Tự động tính lại endTime nếu có startTime hoặc movieId
+        if (updateData.startTime || updateData.movieId) {
             const movieId = updateData.movieId || screening.movieId;
-            const movie = await require("../models/Movie").findById(movieId);
-            let duration = 90;
-            if (movie && movie.duration) duration = movie.duration;
+            const movie = await Movie.findById(movieId);
+            let duration = 90; // mặc định 90 phút nếu không có
+            if (movie && movie.duration) {
+                duration = movie.duration;
+            }
             const start = new Date(updateData.startTime || screening.startTime);
-            updateData.endTime = new Date(start.getTime() + (duration + 10) * 60000);
+            updateData.endTime = new Date(start.getTime() + (duration + 10) * 60000); // duration + 10 phút
         }
 
         // Kiểm tra trùng giờ nếu có thay đổi thời gian hoặc phòng
@@ -273,12 +275,22 @@ exports.updateScreening = async(req, res) => {
             const populatedScreening = await Screening.findById(screening._id)
                 .populate("movieId", "title")
                 .populate("roomId", "name")
-                .populate("theaterId", "name");
+                .populate("theaterId", "name")
+                .populate("createdBy", "name");
+            
+            // Tạo screening data với tên thay vì ID
+            const screeningData = populatedScreening.toObject();
+            screeningData.movieTitle = populatedScreening.movieId ? populatedScreening.movieId.title : null;
+            screeningData.roomName = populatedScreening.roomId ? populatedScreening.roomId.name : null;
+            screeningData.theaterName = populatedScreening.theaterId ? populatedScreening.theaterId.name : null;
+            screeningData.createdByName = populatedScreening.createdBy ? populatedScreening.createdBy.name : null;
+            screeningData.status = "pending"; // Đảm bảo trạng thái là pending
+            
             // Tạo approval request mới với dữ liệu đã populate
             await ApprovalRequest.create({
                 staffId: screening.createdBy,
                 type: "screening",
-                requestData: populatedScreening.toObject(),
+                requestData: screeningData,
                 referenceId: screening._id,
                 status: "pending",
             });
@@ -289,11 +301,21 @@ exports.updateScreening = async(req, res) => {
             const populatedScreening = await Screening.findById(screening._id)
                 .populate("movieId", "title")
                 .populate("roomId", "name")
-                .populate("theaterId", "name");
+                .populate("theaterId", "name")
+                .populate("createdBy", "name");
+                
+            // Tạo screening data với tên thay vì ID
+            const screeningData = populatedScreening.toObject();
+            screeningData.movieTitle = populatedScreening.movieId ? populatedScreening.movieId.title : null;
+            screeningData.roomName = populatedScreening.roomId ? populatedScreening.roomId.name : null;
+            screeningData.theaterName = populatedScreening.theaterId ? populatedScreening.theaterId.name : null;
+            screeningData.createdByName = populatedScreening.createdBy ? populatedScreening.createdBy.name : null;
+            screeningData.status = "pending"; // Đảm bảo trạng thái là pending
+            
             await ApprovalRequest.create({
                 staffId: screening.createdBy,
                 type: "screening",
-                requestData: populatedScreening.toObject(),
+                requestData: screeningData,
                 referenceId: screening._id,
                 status: "pending",
             });
