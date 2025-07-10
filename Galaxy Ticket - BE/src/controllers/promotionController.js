@@ -1,5 +1,6 @@
 const Promotion = require('../models/Promotion');
 const ApprovalRequest = require('../models/ApprovalRequest');
+const { uploadPromotionImage } = require('../services/uploadService');
 
 // Lấy tất cả promotion
 exports.getAllPromotions = async (req, res) => {
@@ -72,9 +73,23 @@ exports.createPromotion = async (req, res) => {
         if (req.body._id) {
             delete req.body._id;
         }
+
+        // Check if image file exists
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Promotion image is required"
+            });
+        }
+
+        // Upload image to Cloudinary
+        const posterUrl = await uploadPromotionImage(req.file);
+
         // Ép kiểu ngày
         if (req.body.startDate) req.body.startDate = new Date(req.body.startDate);
-        if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);        // Kiểm tra và lấy ID người dùng
+        if (req.body.endDate) req.body.endDate = new Date(req.body.endDate);        
+        
+        // Kiểm tra và lấy ID người dùng
         let createdBy;
         // Sử dụng userId từ req.user (theo cách JWT được tạo trong auth.controller.js)
         if (req.user) {
@@ -95,9 +110,12 @@ exports.createPromotion = async (req, res) => {
         // Tạo promotion với status pending
         const promotion = await Promotion.create({
             ...req.body,
+            posterUrl,
             createdBy,
             status: 'pending'
-        });        // Tạo approval request
+        });        
+
+        // Tạo approval request
         await ApprovalRequest.create({
             staffId: req.user.userId,
             type: 'promotion',
@@ -108,7 +126,7 @@ exports.createPromotion = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Promotion created and pennding approval',
+            message: 'Promotion created and pending approval',
             data: promotion
         });
     } catch (err) {
@@ -140,6 +158,12 @@ exports.updatePromotion = async (req, res) => {
         }
 
         const updateData = { ...req.body };
+        
+        // Handle image update if provided
+        if (req.file) {
+            updateData.posterUrl = await uploadPromotionImage(req.file);
+        }
+
         if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
         if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
 
@@ -227,6 +251,11 @@ exports.deletePromotion = async (req, res) => {
             });
         }
 
+        // Delete image from Cloudinary if exists
+        if (promotion.posterUrl && promotion.posterUrl.public_id) {
+            await cloudinary.uploader.destroy(promotion.posterUrl.public_id);
+        }
+
         // Nếu promotion đang ở trạng thái approved
         if (promotion.status === 'approved') {
             // Tạo approval request mới
@@ -237,42 +266,42 @@ exports.deletePromotion = async (req, res) => {
                     ...promotion.toObject(),
                     status: 'pending',
                     approvedBy: null,
-                    rejectionReason: null
+                    rejectionReason: null,
+                    posterUrl: null // Reset image data
                 },
                 referenceId: promotion._id,
                 status: 'pending'
             });
 
-            // Cập nhật promotion về trạng thái pending
+            // Cập nhật promotion về trạng thái pending và xóa ảnh
             const updatedPromotion = await Promotion.findByIdAndUpdate(
                 req.params.id,
                 {
                     status: 'pending',
                     approvedBy: null,
-                    rejectionReason: null
+                    rejectionReason: null,
+                    posterUrl: null
                 },
                 { new: true }
             );
 
             return res.status(200).json({
                 success: true,
-                message: 'Promotion has been set to pending for re-approval',
+                message: 'Promotion deletion submitted for approval',
                 data: updatedPromotion
             });
-        } else {
-            // Nếu không phải approved thì thực hiện soft delete như cũ
-            const deletedPromotion = await Promotion.findByIdAndUpdate(
-                req.params.id,
-                { isActive: false },
-                { new: true }
-            );
-
-            return res.status(200).json({
-                success: true,
-                message: 'Promotion deleted successfully',
-                data: deletedPromotion
-            });
         }
+
+        // Nếu promotion đang ở trạng thái pending hoặc rejected
+        await Promotion.findByIdAndUpdate(req.params.id, {
+            isActive: false,
+            posterUrl: null
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Promotion deleted successfully'
+        });
     } catch (err) {
         res.status(500).json({
             success: false,

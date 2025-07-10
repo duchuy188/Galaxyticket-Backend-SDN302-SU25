@@ -51,6 +51,21 @@ const promotionSchema = new mongoose.Schema({
             message: 'Ngày kết thúc phải sau ngày bắt đầu'
         }
     },
+    posterUrl: {
+        type: String,
+        required: [true, 'Promotion image is required'],
+        validate: {
+            validator: function(v) {
+                try {
+                    new URL(v);
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            },
+            message: 'Poster URL must be a valid URL format'
+        }
+    },
     isActive: {
         type: Boolean,
         default: true

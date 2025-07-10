@@ -97,4 +97,37 @@ const uploadAvatar = async (file) => {
   }
 };
 
-module.exports = { upload, uploadImage, uploadAvatar };
+const uploadPromotionImage = async (file) => {
+  try {
+    if (!file) {
+      throw new Error("No file found to upload");
+    }
+
+    if (!ALLOWED_FORMATS.includes(file.mimetype)) {
+      throw new Error("Unsupported file format");
+    }
+
+    const b64 = Buffer.from(file.buffer).toString("base64");
+    const dataURI = `data:${file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: "promotions",
+      resource_type: "auto",
+      transformation: [
+        { quality: "auto" },
+        { fetch_format: "auto" },
+        { width: 1000, crop: "scale" }
+      ],
+    });
+
+    if (!result || !result.secure_url) {
+      throw new Error("Failed to get URL from Cloudinary");
+    }
+
+    return result.secure_url;
+  } catch (error) {
+    throw new Error(`Promotion image upload failed: ${error.message}`);
+  }
+};
+
+module.exports = { upload, uploadImage, uploadAvatar, uploadPromotionImage };
