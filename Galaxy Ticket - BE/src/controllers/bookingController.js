@@ -7,6 +7,7 @@ const Transaction = require('../models/Transaction');
 const QRCode = require('qrcode');
 const { sendMovieTicket } = require('../services/emailService');
 const User = require('../models/User');
+const PromotionUsage = require('../models/PromotionUsage');
 
 const activeBookingTimeouts = {};
 
@@ -274,6 +275,7 @@ exports.createBooking = async(req, res) => {
 
         // Calculate total price based on screening's ticketPrice and number of seats
         let totalPrice = screening.ticketPrice * processedSeatNumbers.length;
+        let promotionId = null;
 
         // Apply promotion code if provided
         if (code) {
@@ -285,15 +287,7 @@ exports.createBooking = async(req, res) => {
                 endDate: { $gte: new Date() }
             });
 
-            if (promotion) {
-                if (promotion.type === 'percent') {
-                    totalPrice = totalPrice * (1 - promotion.value / 100);
-                } else if (promotion.type === 'fixed') {
-                    totalPrice = Math.max(0, totalPrice - promotion.value);
-                }
-                // Làm tròn số tiền đến hàng nghìn gần nhất
-                totalPrice = Math.round(totalPrice / 1000) * 1000;
-            } else {
+            if (!promotion) {
                 return res.status(400).json({
                     success: false,
                     message: 'Mã khuyến mãi không hợp lệ',
@@ -302,6 +296,32 @@ exports.createBooking = async(req, res) => {
                     }
                 });
             }
+
+            // Kiểm tra xem user đã sử dụng mã khuyến mãi này chưa
+            const existingUsage = await PromotionUsage.findOne({
+                userId: userId,
+                promotionId: promotion._id
+            });
+
+            if (existingUsage) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bạn đã sử dụng mã khuyến mãi này rồi',
+                    data: {
+                        totalPrice: screening.ticketPrice * processedSeatNumbers.length
+                    }
+                });
+            }
+
+            promotionId = promotion._id;
+
+            if (promotion.type === 'percent') {
+                totalPrice = totalPrice * (1 - promotion.value / 100);
+            } else if (promotion.type === 'fixed') {
+                totalPrice = Math.max(0, totalPrice - promotion.value);
+            }
+            // Làm tròn số tiền đến hàng nghìn gần nhất
+            totalPrice = Math.round(totalPrice / 1000) * 1000;
         }
 
         const bookingData = {
@@ -309,7 +329,8 @@ exports.createBooking = async(req, res) => {
             screeningId,
             seatNumbers: processedSeatNumbers,
             totalPrice: totalPrice || 0, // Đảm bảo totalPrice luôn có giá trị
-            paymentStatus: 'pending'
+            paymentStatus: 'pending',
+            promotionId // Thêm promotionId vào booking data
         };
 
         if (code) {
@@ -896,7 +917,6 @@ exports.updateBookingStatus = async(req, res) => {
                 success: false,
                 message: 'Không thể thanh toán cho đặt vé đã bị hủy. Thời gian giữ ghế đã hết hạn.'
             });
-
         }
 
         if (booking.paymentStatus === 'paid') {
@@ -931,6 +951,20 @@ exports.updateBookingStatus = async(req, res) => {
         // Cập nhật trạng thái đặt vé thành đã thanh toán
         booking.paymentStatus = 'paid';
         await booking.save();
+
+        // Nếu có sử dụng mã khuyến mãi, lưu thông tin sử dụng
+        if (booking.promotionId) {
+            try {
+                await PromotionUsage.create({
+                    userId: booking.userId,
+                    promotionId: booking.promotionId,
+                    bookingId: booking._id
+                });
+            } catch (error) {
+                console.error('Lỗi khi lưu thông tin sử dụng mã khuyến mãi:', error);
+                // Không throw error ở đây vì booking đã thanh toán thành công
+            }
+        }
 
         // Xóa thời gian chờ tự động hủy nếu nó tồn tại
         if (activeBookingTimeouts[bookingId]) {

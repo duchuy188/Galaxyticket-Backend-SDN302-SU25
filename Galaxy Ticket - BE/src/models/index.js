@@ -9,6 +9,7 @@ const Screening = require('./Screening');
 const Seat = require('./Seat');
 const Theater = require('./Theater');
 const Transaction = require('./Transaction');
+const PromotionUsage = require('./PromotionUsage');
 
 module.exports = {
     User,
@@ -20,5 +21,6 @@ module.exports = {
     Screening,
     Seat,
     Theater,
-    Transaction
+    Transaction,
+    PromotionUsage
 };

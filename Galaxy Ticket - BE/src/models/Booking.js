@@ -27,6 +27,16 @@ const bookingSchema = new mongoose.Schema({
         enum: ['pending', 'paid', 'failed', 'cancelled'],
         default: 'pending'
     },
+    promotionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Promotion',
+        default: null
+    },
+    discountAmount: {
+        type: Number,
+        default: 0,
+        min: [0, 'Số tiền giảm giá không thể âm']
+    },
     code: {
         type: String,
         trim: true,

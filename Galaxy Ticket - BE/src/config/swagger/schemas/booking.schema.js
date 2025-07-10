@@ -29,6 +29,15 @@
  *           type: number
  *           minimum: 0
  *           description: Total price of the booking after any promotions are applied
+ *         promotionId:
+ *           type: string
+ *           nullable: true
+ *           description: The MongoDB ObjectId of the promotion applied to the booking (if any)
+ *         discountAmount:
+ *           type: number
+ *           minimum: 0
+ *           default: 0
+ *           description: Amount discounted from the total price by the promotion
  *         code:
  *           type: string
  *           nullable: true
@@ -50,13 +59,9 @@
  *     BookingCreate:
  *       type: object
  *       required:
- *         - userId
  *         - screeningId
  *         - seatNumbers
  *       properties:
- *         userId:
- *           type: string
- *           description: The MongoDB ObjectId of the user making the booking
  *         screeningId:
  *           type: string
  *           description: The MongoDB ObjectId of the screening being booked
@@ -86,17 +91,26 @@
  *     BookingResponse:
  *       type: object
  *       properties:
+ *         success:
+ *           type: boolean
+ *           description: Whether the operation was successful
  *         message:
  *           type: string
  *           description: Response message
- *         booking:
- *           $ref: '#/components/schemas/Booking'
+ *         data:
+ *           type: object
+ *           properties:
+ *             booking:
+ *               $ref: '#/components/schemas/Booking'
  * 
  *     BookingError:
  *       type: object
  *       properties:
+ *         success:
+ *           type: boolean
+ *           description: Always false for error responses
  *         message:
  *           type: string
  *           description: Error message
- *           example: "One or more seats are already booked"
+ *           example: "Mã khuyến mãi không hợp lệ hoặc đã hết hạn"
  */
