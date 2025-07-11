@@ -66,6 +66,16 @@ const promotionSchema = new mongoose.Schema({
             message: 'Poster URL must be a valid URL format'
         }
     },
+    maxUsage: {
+        type: Number,
+        default: 5,
+        min: [1, 'Số lượng sử dụng tối đa phải lớn hơn 0']
+    },
+    currentUsage: {
+        type: Number,
+        default: 0,
+        min: [0, 'Số lượng sử dụng hiện tại không thể âm']
+    },
     isActive: {
         type: Boolean,
         default: true

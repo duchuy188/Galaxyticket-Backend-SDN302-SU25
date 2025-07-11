@@ -342,6 +342,10 @@ exports.validatePromotionCode = async (req, res) => {
             console.log('Promotion đã hết hạn');
             return res.status(404).json({ message: 'Invalid or expired promotion code' });
         }
+        if (promotion.currentUsage >= promotion.maxUsage) {
+            console.log('Promotion đã hết lượt sử dụng');
+            return res.status(404).json({ message: 'This promotion code has reached its usage limit' });
+        }
 
         // Nếu qua hết các điều kiện
         res.json(promotion);

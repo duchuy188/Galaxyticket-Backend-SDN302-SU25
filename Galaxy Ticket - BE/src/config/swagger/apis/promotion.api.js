@@ -53,6 +53,9 @@
  *               endDate:
  *                 type: string
  *                 format: date-time
+ *               maxUsage:
+ *                 type: number
+ *                 description: Số lượng user tối đa có thể sử dụng mã (mặc định là 5)
  *               isActive:
  *                 type: boolean
  *               createdBy:
@@ -125,6 +128,9 @@
  *               endDate:
  *                 type: string
  *                 format: date-time
+ *               maxUsage:
+ *                 type: number
+ *                 description: Số lượng user tối đa có thể sử dụng mã (mặc định là 5)
  *               isActive:
  *                 type: boolean
  *             required:
@@ -181,5 +187,9 @@
  *             schema:
  *               $ref: '#/components/schemas/Promotion'
  *       404:
- *         description: Mã không hợp lệ hoặc hết hạn
+ *         description: |
+ *           Mã không hợp lệ hoặc hết hạn. Có thể do một trong các lý do sau:
+ *           - Mã không tồn tại
+ *           - Mã hết hạn
+ *           - Mã đã đạt giới hạn số lượng sử dụng (5 user)
  */

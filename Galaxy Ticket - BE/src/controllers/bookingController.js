@@ -297,6 +297,17 @@ exports.createBooking = async(req, res) => {
                 });
             }
 
+            // Kiểm tra số lượng đã sử dụng
+            if (promotion.currentUsage >= promotion.maxUsage) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mã khuyến mãi đã hết lượt sử dụng',
+                    data: {
+                        totalPrice: screening.ticketPrice * processedSeatNumbers.length
+                    }
+                });
+            }
+
             // Kiểm tra xem user đã sử dụng mã khuyến mãi này chưa
             const existingUsage = await PromotionUsage.findOne({
                 userId: userId,
@@ -688,6 +699,27 @@ exports.updateBooking = async(req, res) => {
                         });
                     }
 
+                    // Kiểm tra số lượng đã sử dụng
+                    if (promotion.currentUsage >= promotion.maxUsage) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Mã khuyến mãi đã hết lượt sử dụng'
+                        });
+                    }
+
+                    // Kiểm tra xem user đã sử dụng mã khuyến mãi này chưa
+                    const existingUsage = await PromotionUsage.findOne({
+                        userId: booking.userId,
+                        promotionId: promotion._id
+                    });
+
+                    if (existingUsage) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Bạn đã sử dụng mã khuyến mãi này rồi'
+                        });
+                    }
+
                     booking.code = newCode;
 
                     // Tính lại giá với mã khuyến mãi mới
@@ -952,14 +984,22 @@ exports.updateBookingStatus = async(req, res) => {
         booking.paymentStatus = 'paid';
         await booking.save();
 
-        // Nếu có sử dụng mã khuyến mãi, lưu thông tin sử dụng
+        // Nếu có sử dụng mã khuyến mãi, lưu thông tin sử dụng và cập nhật số lượng
         if (booking.promotionId) {
             try {
+                // Tạo promotion usage
                 await PromotionUsage.create({
                     userId: booking.userId,
                     promotionId: booking.promotionId,
                     bookingId: booking._id
                 });
+
+                // Cập nhật số lượng sử dụng của promotion
+                await Promotion.findByIdAndUpdate(
+                    booking.promotionId,
+                    { $inc: { currentUsage: 1 } },
+                    { new: true }
+                );
             } catch (error) {
                 console.error('Lỗi khi lưu thông tin sử dụng mã khuyến mãi:', error);
                 // Không throw error ở đây vì booking đã thanh toán thành công

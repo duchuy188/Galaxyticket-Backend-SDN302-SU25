@@ -32,6 +32,12 @@
  *           type: string
  *           format: date-time
  *           description: Ngày kết thúc
+ *         maxUsage:
+ *           type: number
+ *           description: Số lượng user tối đa có thể sử dụng mã (mặc định là 5)
+ *         currentUsage:
+ *           type: number
+ *           description: Số lượng user đã sử dụng mã thành công
  *         isActive:
  *           type: boolean
  *           description: Đang hoạt động hay không
