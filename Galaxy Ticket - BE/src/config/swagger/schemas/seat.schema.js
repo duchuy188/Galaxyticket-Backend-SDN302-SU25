@@ -8,6 +8,7 @@
  *         - screeningId
  *         - seatNumber
  *         - status
+ *         - roomId
  *       properties:
  *         _id:
  *           type: string
@@ -20,12 +21,24 @@
  *         seatNumber:
  *           type: string
  *           description: Số ghế
+ *           minLength: 1
+ *           maxLength: 10
  *           example: "A1"
  *         status:
  *           type: string
  *           enum: [available, reserved, booked]
  *           description: Trạng thái ghế
  *           example: "available"
+ *         reservedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Thời gian giữ ghế (null nếu chưa giữ)
+ *           example: "2025-07-12T10:00:00Z"
+ *           nullable: true
+ *         roomId:
+ *           type: string
+ *           description: ID của phòng chiếu
+ *           example: "507f1f77bcf86cd799439012"
  *         createdAt:
  *           type: string
  *           format: date-time

@@ -34,154 +34,6 @@
 
 /**
  * @swagger
- * /api/seats/create-bulk:
- *   post:
- *     summary: Tạo một hoặc nhiều ghế cho suất chiếu
- *     tags: [Seats]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - screeningId
- *               - seats
- *             properties:
- *               screeningId:
- *                 type: string
- *                 description: ID của suất chiếu
- *               seats:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Danh sách số ghế cần tạo
- *                 example: ["A1", "A2", "B1", "B2"]
- *     responses:
- *       201:
- *         description: Tạo ghế thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Seats created successfully"
- *                 seats:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Seat'
- *       400:
- *         description: Dữ liệu không hợp lệ hoặc ghế đã tồn tại
- *       500:
- *         description: Lỗi server
- */
-
-/**
- * @swagger
- * /api/seats/reserve:
- *   post:
- *     summary: Đặt giữ ghế
- *     tags: [Seats]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - screeningId
- *               - seatNumber
- *             properties:
- *               screeningId:
- *                 type: string
- *               seatNumber:
- *                 type: string
- *     responses:
- *       200:
- *         description: Đặt giữ ghế thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 seat:
- *                   $ref: '#/components/schemas/Seat'
- *       400:
- *         description: Dữ liệu không hợp lệ
- *       404:
- *         description: Không tìm thấy ghế hoặc ghế đã được đặt
- *       500:
- *         description: Lỗi server
- */
-
-/**
- * @swagger
- * /api/seats/status:
- *   get:
- *     summary: Kiểm tra trạng thái ghế
- *     tags: [Seats]
- *     parameters:
- *       - in: query
- *         name: screeningId
- *         schema:
- *           type: string
- *         required: true
- *         description: ID của suất chiếu
- *       - in: query
- *         name: seatNumber
- *         schema:
- *           type: string
- *         required: true
- *         description: Số ghế
- *     responses:
- *       200:
- *         description: Lấy trạng thái ghế thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 status:
- *                   type: string
- *                   enum: [available, reserved, booked]
- *       400:
- *         description: Dữ liệu không hợp lệ
- *       404:
- *         description: Không tìm thấy ghế
- *       500:
- *         description: Lỗi server
- */
-
-/**
- * @swagger
- * /api/seats/release-expired:
- *   post:
- *     summary: Giải phóng các ghế hết hạn
- *     tags: [Seats]
- *     responses:
- *       200:
- *         description: Giải phóng ghế thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 modifiedCount:
- *                   type: number
- *       500:
- *         description: Lỗi server
- */
-
-/**
- * @swagger
  * /api/seats/screening/{screeningId}:
  *   get:
  *     summary: Lấy danh sách ghế của một suất chiếu
@@ -192,10 +44,10 @@
  *         schema:
  *           type: string
  *         required: true
- *         description: ID của suất chiếu
+ *         description: ID của suất chiếu (phải đúng định dạng ObjectId)
  *     responses:
  *       200:
- *         description: Lấy danh sách ghế thành công
+ *         description: Seats retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -203,12 +55,31 @@
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "Seats retrieved successfully"
  *                 seats:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Seat'
  *       400:
- *         description: Dữ liệu không hợp lệ
+ *         description: Invalid screening ID format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid screening ID format"
  *       500:
- *         description: Lỗi server
+ *         description: Error retrieving seats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving seats"
+ *                 error:
+ *                   type: string
  */

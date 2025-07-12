@@ -59,12 +59,6 @@ router.get('/member', authenticate, authorizeRoles('member'), async (req, res) =
 // Lấy tất cả suất chiếu
 router.get('/', authenticate, screeningController.getAllScreenings);
 
-// Lấy tất cả suất chiếu theo rạp
-router.get('/theater/:theaterId', authenticate, screeningController.getScreeningsByTheater);
-
-// Lấy tất cả suất chiếu theo phim
-router.get('/movie/:movieId', authenticate, screeningController.getScreeningsByMovie);
-
 // Lấy chi tiết 1 suất chiếu
 router.get('/:id', authenticate, screeningController.getScreeningById);
 

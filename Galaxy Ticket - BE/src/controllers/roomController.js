@@ -5,6 +5,22 @@ const Seat = require('../models/Seat');
 exports.createRoom = async(req, res) => {
     try {
         const { theaterId, name, totalSeats } = req.body;
+        const normalizedName = name.replace(/\s+/g, '').toLowerCase();
+        // Lấy tất cả phòng cùng rạp
+        const rooms = await Room.find({ theaterId });
+        // Kiểm tra trùng tên
+        const roomNamePairs = rooms.map(room => ({
+            original: room.name,
+            normalized: room.name.replace(/\s+/g, '').toLowerCase()
+        }));
+        const isDuplicate = roomNamePairs.some(pair => pair.normalized === normalizedName);
+        if (isDuplicate) {
+            return res.status(400).json({ 
+                message: 'Room name already exists in this theater',
+                roomNamePairs,
+                yourNormalizedName: normalizedName
+            });
+        }
         const room = new Room({ theaterId, name, totalSeats });
         await room.save();
 
@@ -45,6 +61,13 @@ exports.getRoomById = async(req, res) => {
 exports.updateRoom = async(req, res) => {
     try {
         const { theaterId, name, totalSeats } = req.body;
+        const normalizedName = name.replace(/\s+/g, '').toLowerCase();
+        // Lấy tất cả phòng cùng rạp, loại trừ phòng hiện tại
+        const rooms = await Room.find({ theaterId, _id: { $ne: req.params.id } });
+        const isDuplicate = rooms.some(room => room.name.replace(/\s+/g, '').toLowerCase() === normalizedName);
+        if (isDuplicate) {
+            return res.status(400).json({ message: 'Room name already exists in this theater' });
+        }
         const room = await Room.findByIdAndUpdate(
             req.params.id, { theaterId, name, totalSeats }, { new: true, runValidators: true }
         );

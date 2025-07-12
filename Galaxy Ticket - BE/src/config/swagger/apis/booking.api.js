@@ -44,7 +44,14 @@
  *         code:
  *           type: string
  *           nullable: true
- *           description: Promotion code applied to the booking
+ *           description: Promotion code applied to the booking (always uppercase, max 20 chars)
+ *           maxLength: 20
+ *           minLength: 1
+ *           example: "PROMO2025"
+ *         emailSent:
+ *           type: boolean
+ *           default: false
+ *           description: Whether the booking confirmation email was sent
  *         createdAt:
  *           type: string
  *           format: date-time
