@@ -266,52 +266,36 @@ exports.updateScreening = async(req, res) => {
         }
 
         // Nếu screening đã được approve, tạo approval request mới
+        let needApprovalRequest = false;
         if (screening.status === "approved") {
             updateData.status = "pending";
             updateData.approvedBy = null;
             updateData.rejectionReason = null;
-
-            // Sau khi update screening, populate lại
-            const populatedScreening = await Screening.findById(screening._id)
-                .populate("movieId", "title")
-                .populate("roomId", "name")
-                .populate("theaterId", "name")
-                .populate("createdBy", "name");
-            
-            // Tạo screening data với tên thay vì ID
-            const screeningData = populatedScreening.toObject();
-            screeningData.movieTitle = populatedScreening.movieId ? populatedScreening.movieId.title : null;
-            screeningData.roomName = populatedScreening.roomId ? populatedScreening.roomId.name : null;
-            screeningData.theaterName = populatedScreening.theaterId ? populatedScreening.theaterId.name : null;
-            screeningData.createdByName = populatedScreening.createdBy ? populatedScreening.createdBy.name : null;
-            screeningData.status = "pending"; // Đảm bảo trạng thái là pending
-            
-            // Tạo approval request mới với dữ liệu đã populate
-            await ApprovalRequest.create({
-                staffId: screening.createdBy,
-                type: "screening",
-                requestData: screeningData,
-                referenceId: screening._id,
-                status: "pending",
-            });
+            needApprovalRequest = true;
         } else if (screening.status === "rejected") {
             updateData.status = "pending";
             updateData.rejectionReason = null;
+            needApprovalRequest = true;
+        }
 
-            const populatedScreening = await Screening.findById(screening._id)
+        const updatedScreening = await Screening.findByIdAndUpdate(
+            req.params.id,
+            updateData, { new: true, runValidators: true }
+        );
+
+        // Sau khi update screening, nếu cần approval request thì dùng dữ liệu mới nhất
+        if (needApprovalRequest) {
+            const populatedScreening = await Screening.findById(updatedScreening._id)
                 .populate("movieId", "title")
                 .populate("roomId", "name")
                 .populate("theaterId", "name")
                 .populate("createdBy", "name");
-                
-            // Tạo screening data với tên thay vì ID
             const screeningData = populatedScreening.toObject();
             screeningData.movieTitle = populatedScreening.movieId ? populatedScreening.movieId.title : null;
             screeningData.roomName = populatedScreening.roomId ? populatedScreening.roomId.name : null;
             screeningData.theaterName = populatedScreening.theaterId ? populatedScreening.theaterId.name : null;
             screeningData.createdByName = populatedScreening.createdBy ? populatedScreening.createdBy.name : null;
-            screeningData.status = "pending"; // Đảm bảo trạng thái là pending
-            
+            screeningData.status = "pending";
             await ApprovalRequest.create({
                 staffId: screening.createdBy,
                 type: "screening",
@@ -320,11 +304,6 @@ exports.updateScreening = async(req, res) => {
                 status: "pending",
             });
         }
-
-        const updatedScreening = await Screening.findByIdAndUpdate(
-            req.params.id,
-            updateData, { new: true, runValidators: true }
-        );
 
         res.status(200).json({
             success: true,
