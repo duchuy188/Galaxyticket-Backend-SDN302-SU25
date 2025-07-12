@@ -283,6 +283,12 @@ exports.updateScreening = async(req, res) => {
             updateData, { new: true, runValidators: true }
         );
 
+        // Reset all seats for this screening to 'available' after update
+        await require("../models/Seat").updateMany(
+            { screeningId: screening._id },
+            { $set: { status: "available", reservedAt: null } }
+        );
+
         // Sau khi update screening, nếu cần approval request thì dùng dữ liệu mới nhất
         if (needApprovalRequest) {
             const populatedScreening = await Screening.findById(updatedScreening._id)

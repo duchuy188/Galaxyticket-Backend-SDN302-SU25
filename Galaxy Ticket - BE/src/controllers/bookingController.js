@@ -1034,30 +1034,30 @@ exports.updateBookingStatus = async(req, res) => {
         ].join('\n');
         const qrCodeDataUrl = await QRCode.toDataURL(qrContent);
 
-        // Gửi email xác nhận sau khi thanh toán thành công
-        try {
-            // Lấy thông tin người dùng
-            const user = await User.findById(booking.userId);
-            if (user && user.email) {
-                // Tạo dữ liệu cho email
-                const ticketData = {
-                    movieName: booking.screeningId.movieId.title,
-                    screeningTime: booking.screeningId.startTime,
-                    seatNumbers: booking.seatNumbers,
-                    cinemaName: booking.screeningId.roomId.theaterId.name,
-                    hallName: booking.screeningId.roomId.name,
-                    bookingCode: booking.code,
-                    totalPrice: booking.totalPrice,
-                    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${booking._id}`
-                };
-
-                // Gửi email xác nhận vé
-                await sendMovieTicket(user.email, ticketData);
-                console.log('Đã gửi email xác nhận vé sau khi thanh toán thành công cho:', user.email);
-            }
-        } catch (emailError) {
-            console.error('Lỗi khi gửi email xác nhận vé:', emailError);
-            // Không làm thất bại quá trình thanh toán nếu gửi email thất bại
+        // Tạo dữ liệu cho email trước khi gửi
+        const ticketData = {
+            movieName: booking.screeningId.movieId.title,
+            screeningTime: booking.screeningId.startTime,
+            seatNumbers: booking.seatNumbers,
+            cinemaName: booking.screeningId.roomId.theaterId.name,
+            hallName: booking.screeningId.roomId.name,
+            bookingCode: booking.code,
+            totalPrice: booking.totalPrice,
+            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${booking._id}`
+        };
+        // Lấy thông tin user trước khi gửi email
+        const user = await User.findById(booking.userId);
+        // Gửi email xác nhận vé (atomic update để chống gửi 2 lần)
+        const updatedBooking = await Booking.findOneAndUpdate(
+            { _id: booking._id, emailSent: false },
+            { $set: { emailSent: true } },
+            { new: true }
+        );
+        if (updatedBooking && user && user.email) {
+            await sendMovieTicket(user.email, ticketData);
+            console.log('Đã gửi email xác nhận vé sau khi thanh toán thành công cho:', user.email);
+        } else {
+            console.log('Email đã được gửi trước đó cho booking này:', booking._id);
         }
 
         res.json({
