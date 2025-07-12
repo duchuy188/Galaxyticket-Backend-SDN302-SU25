@@ -41,7 +41,14 @@
  *         code:
  *           type: string
  *           nullable: true
- *           description: Promotion code applied to the booking (if any)
+ *           description: Promotion code applied to the booking (if any, always uppercase, max 20 chars)
+ *           maxLength: 20
+ *           minLength: 1
+ *           example: "PROMO2025"
+ *         emailSent:
+ *           type: boolean
+ *           default: false
+ *           description: Whether the booking confirmation email was sent
  *         paymentStatus:
  *           type: string
  *           enum: [pending, paid, failed, cancelled]

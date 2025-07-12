@@ -4,27 +4,33 @@ const bookingSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: [true, 'Thiếu userId']
     },
     screeningId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Screening',
-        required: true
+        required: [true, 'Thiếu screeningId']
     },
     seatNumbers: [{
         type: String,
-        required: true,
-        trim: true
+        required: [true, 'Phải chọn ít nhất 1 ghế'],
+        trim: true,
+        minLength: [1, 'Mã ghế phải có ít nhất 1 ký tự'],
+        maxLength: [10, 'Mã ghế không vượt quá 10 ký tự']
     }],
     totalPrice: {
         type: Number,
-        required: true,
-        min: [0, 'Tổng tiền không thể âm']
+        required: [true, 'Thiếu tổng tiền'],
+        min: [0, 'Tổng tiền không thể âm'],
+        max: [100000000, 'Tổng tiền quá lớn']
     },
     paymentStatus: {
         type: String,
-        required: true,
-        enum: ['pending', 'paid', 'failed', 'cancelled'],
+        required: [true, 'Thiếu trạng thái thanh toán'],
+        enum: {
+            values: ['pending', 'paid', 'failed', 'cancelled'],
+            message: 'Trạng thái thanh toán không hợp lệ'
+        },
         default: 'pending'
     },
     promotionId: {
@@ -35,13 +41,20 @@ const bookingSchema = new mongoose.Schema({
     discountAmount: {
         type: Number,
         default: 0,
-        min: [0, 'Số tiền giảm giá không thể âm']
+        min: [0, 'Số tiền giảm giá không thể âm'],
+        max: [100000000, 'Số tiền giảm giá quá lớn']
     },
     code: {
         type: String,
         trim: true,
         uppercase: true,
-        default: null
+        default: null,
+        minLength: [1, 'Mã code phải có ít nhất 1 ký tự'],
+        maxLength: [20, 'Mã code không vượt quá 20 ký tự'],
+    },
+    emailSent: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
