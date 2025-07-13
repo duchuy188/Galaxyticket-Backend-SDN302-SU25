@@ -44,7 +44,7 @@ router.put(
   userController.updateProfile
 );
 
-// User xóa avatar
+
 router.delete(
   "/profile/avatar",
   authenticate,
