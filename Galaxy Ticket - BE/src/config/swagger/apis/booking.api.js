@@ -342,4 +342,56 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/BookingError'
+ *
+ * /api/bookings/admin:
+ *   get:
+ *     summary: Admin - Get all bookings with filters and status
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: paymentStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, paid, cancelled]
+ *         description: Filter by payment status
+ *       - in: query
+ *         name: screeningId
+ *         schema:
+ *           type: string
+ *         description: Filter by screening ID
+ *     responses:
+ *       200:
+ *         description: List of bookings for admin retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy danh sách đặt vé cho admin thành công"
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Booking'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BookingError'
+ *       403:
+ *         description: Forbidden (not admin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BookingError'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BookingError'
  */
