@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/bookingController');
-const { authenticate } = require('../middlewares/auth.middleware');
+const { authenticate, adminMiddleware, requireRole, verifyToken } = require('../middlewares/auth.middleware');
 
 // Get user's bookings
 router.get('/user', authenticate, bookingController.getUserBookings);
-
+// Route cho admin lấy tất cả booking và lọc trạng thái
+router.get('/admin', verifyToken, requireRole('admin'), bookingController.adminGetBookings);
 // Get all bookings with filters
 router.get('/', bookingController.getBookings);
 

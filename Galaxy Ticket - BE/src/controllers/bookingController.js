@@ -1179,3 +1179,38 @@ exports.sendTicketEmail = async(req, res) => {
     }
 
 };
+
+// API cho admin lấy tất cả booking và lọc theo trạng thái
+exports.adminGetBookings = async (req, res) => {
+    try {
+        // Kiểm tra quyền admin
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập' });
+        }
+        const { paymentStatus, screeningId } = req.query;
+        const filter = {};
+        // Chỉ lọc các trạng thái hợp lệ
+        const validStatuses = ['pending', 'paid', 'cancelled'];
+        if (paymentStatus && validStatuses.includes(paymentStatus)) {
+            filter.paymentStatus = paymentStatus;
+        }
+        if (screeningId) {
+            filter.screeningId = screeningId;
+        }
+        // Lấy tất cả booking, có thể lọc theo trạng thái
+        const bookings = await Booking.find(filter)
+            .populate('userId', 'name email')
+            .populate({
+                path: 'screeningId',
+                populate: { path: 'roomId', select: 'name' }
+            })
+            .sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            message: 'Lấy danh sách đặt vé cho admin thành công',
+            data: { bookings }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
