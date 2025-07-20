@@ -87,7 +87,7 @@ exports.getBookings = async(req, res) => {
 // Create a new booking
 exports.createBooking = async(req, res) => {
     try {
-        const { screeningId, seatNumbers: rawSeatNumbers, code } = req.body;
+        const { screeningId, seatNumbers: rawSeatNumbers, code, paymentMethod } = req.body; // Thêm paymentMethod
         const userId = req.user.userId; // Get userId from authenticated user
 
         // Validate required fields
@@ -341,7 +341,8 @@ exports.createBooking = async(req, res) => {
             seatNumbers: processedSeatNumbers,
             totalPrice: totalPrice || 0, // Đảm bảo totalPrice luôn có giá trị
             paymentStatus: 'pending',
-            promotionId // Thêm promotionId vào booking data
+            promotionId, // Thêm promotionId vào booking data
+            paymentMethod // Thêm paymentMethod vào booking data
         };
 
         if (code) {
@@ -465,7 +466,7 @@ exports.cancelBooking = async(req, res) => {
 exports.updateBooking = async(req, res) => {
     try {
         const { bookingId } = req.params;
-        const { seatNumbers, code } = req.body;
+        const { seatNumbers, code, paymentMethod } = req.body; // Thêm paymentMethod
 
         const booking = await Booking.findById(bookingId)
             .populate({
@@ -740,6 +741,11 @@ exports.updateBooking = async(req, res) => {
             }
         }
 
+        // Nếu truyền paymentMethod thì cập nhật
+        if (paymentMethod) {
+            booking.paymentMethod = paymentMethod;
+        }
+
         // Lưu các thay đổi
         await booking.save();
 
@@ -872,7 +878,8 @@ exports.getUserBookings = async(req, res) => {
                     `Thời gian chiếu phim: ${booking.screeningId.startTime ? new Date(booking.screeningId.startTime).toLocaleString('vi-VN') : 'N/A'}`,
                     `Phòng: ${booking.screeningId.roomId?.name || 'N/A'}`,
                     `Ghế: ${booking.seatNumbers.join(', ')}`,
-                    `Tổng tiền: ${(booking.totalPrice || 0).toLocaleString('vi-VN')} VND`
+                    `Tổng tiền: ${(booking.totalPrice || 0).toLocaleString('vi-VN')} VND`,
+                    `Phương thức thanh toán: ${booking.paymentMethod || 'Chưa xác định'}` // Thêm dòng này
                 ].join('\n');
 
                 const qrCodeDataUrl = await QRCode.toDataURL(qrContent);
@@ -887,6 +894,7 @@ exports.getUserBookings = async(req, res) => {
                     seatNumbers: booking.seatNumbers,
                     totalPrice: booking.totalPrice || 0,
                     bookingDate: booking.createdAt,
+                    paymentMethod: booking.paymentMethod || 'Chưa xác định', // Thêm trường này vào kết quả trả về
                     qrCodeDataUrl
                 };
                 return transformedBooking;
@@ -921,6 +929,7 @@ exports.getUserBookings = async(req, res) => {
 exports.updateBookingStatus = async(req, res) => {
     try {
         const { bookingId } = req.params;
+        const { paymentMethod } = req.body; // Thêm paymentMethod
         const booking = await Booking.findById(bookingId)
             .populate({
                 path: 'screeningId',
@@ -982,6 +991,7 @@ exports.updateBookingStatus = async(req, res) => {
 
         // Cập nhật trạng thái đặt vé thành đã thanh toán
         booking.paymentStatus = 'paid';
+        if (paymentMethod) booking.paymentMethod = paymentMethod; // Lưu paymentMethod nếu có
         await booking.save();
 
         // Nếu có sử dụng mã khuyến mãi, lưu thông tin sử dụng và cập nhật số lượng
