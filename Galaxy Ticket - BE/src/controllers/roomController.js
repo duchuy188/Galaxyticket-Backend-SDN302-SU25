@@ -81,10 +81,64 @@ exports.updateRoom = async(req, res) => {
 // Delete a room
 exports.deleteRoom = async(req, res) => {
     try {
-        const room = await Room.findByIdAndDelete(req.params.id);
+        const room = await Room.findById(req.params.id);
         if (!room) return res.status(404).json({ message: 'Room not found' });
-        res.json({ message: 'Room deleted successfully' });
+        
+        // Kiểm tra xem có suất chiếu nào sắp tới tại phòng này không
+        const currentDate = new Date();
+        const Screening = require('../models/Screening');
+        const hasScreenings = await Screening.findOne({
+            roomId: req.params.id,
+            isActive: true,
+            startTime: { $gte: currentDate }
+        });
+
+        if (hasScreenings) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa phòng đang có suất chiếu sắp tới. Vui lòng xóa tất cả suất chiếu trước."
+            });
+        }
+
+        // Thay vì xóa hoàn toàn, chỉ đánh dấu là không còn hoạt động
+        room.isActive = false;
+        await room.save();
+        
+        res.json({ 
+            success: true,
+            message: 'Room deleted successfully' 
+        });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ 
+            success: false,
+            message: err.message 
+        });
+    }
+};
+
+// Activate a room (set isActive to true)
+exports.activateRoom = async(req, res) => {
+    try {
+        const room = await Room.findById(req.params.id);
+        if (!room) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Room not found' 
+            });
+        }
+        
+        room.isActive = true;
+        await room.save();
+        
+        res.json({
+            success: true,
+            message: 'Room activated successfully',
+            data: room
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };

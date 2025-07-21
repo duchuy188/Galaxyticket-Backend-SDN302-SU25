@@ -1,6 +1,7 @@
 const Movie = require("../models/Movie");
 const ApprovalRequest = require("../models/ApprovalRequest");
 const { uploadImage } = require("../services/uploadService");
+const Screening = require("../models/Screening");
 
 const getAllMovies = async (req, res) => {
   try {
@@ -231,6 +232,7 @@ const createMovie = async (req, res) => {
 // Update movie
 const updateMovie = async (req, res) => {
   try {
+    console.log("Update movie request body:", req.body);
     const updateData = { ...req.body };
     
     // Parse directors and actors if they are JSON strings
@@ -238,6 +240,7 @@ const updateMovie = async (req, res) => {
       try {
         updateData.directors = JSON.parse(updateData.directors);
       } catch (e) {
+        console.log("Error parsing directors:", e);
         updateData.directors = [updateData.directors]; 
       }
     }
@@ -272,6 +275,22 @@ const updateMovie = async (req, res) => {
       });
     }
 
+    // Kiểm tra xem phim có suất chiếu sắp tới không
+    const currentDate = new Date();
+    const hasUpcomingScreenings = await Screening.findOne({
+      movieId: req.params.id,
+      isActive: true,
+      startTime: { $gte: currentDate }
+    });
+
+    // Nếu có suất chiếu sắp tới, không cho phép chỉnh sửa
+    if (hasUpcomingScreenings) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể chỉnh sửa phim đang có suất chiếu sắp tới. Vui lòng xóa tất cả suất chiếu trước."
+      });
+    }
+
     if (updateData.showingStatus) {
       const currentStatus = movie.showingStatus;
       const newStatus = updateData.showingStatus;
@@ -300,33 +319,39 @@ const updateMovie = async (req, res) => {
     }
 
  
-    if (updateData.endDate) {
-      const releaseDate = updateData.releaseDate || movie.releaseDate;
+    // Kiểm tra cả trường hợp cập nhật endDate và trường hợp giữ nguyên endDate cũ
+    const endDate = updateData.endDate || movie.endDate;
+    const releaseDate = updateData.releaseDate || movie.releaseDate;
+    
+    console.log("Validation dates:", { endDate, releaseDate });
       
-      if (new Date(updateData.endDate) <= new Date(releaseDate)) {
-        return res.status(400).json({
-          success: false,
-          message: "End date must be after release date",
-        });
-      }
+    if (endDate && releaseDate && new Date(endDate) <= new Date(releaseDate)) {
+      console.log("Validation failed: End date must be after release date");
+      return res.status(400).json({
+        success: false,
+        message: "End date must be after release date",
+      });
     }
 
   
     if (movie.status === 'approved') {
+      // Set status to pending immediately
+      updateData.status = 'pending';
+      console.log("Creating approval request for approved movie");
 
-      await ApprovalRequest.create({
-        staffId: movie.createdBy,
-        type: 'movie',
-        requestData: { ...movie.toObject(), ...updateData },
-        referenceId: movie._id,
-        status: 'pending'
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Update request has been submitted and waiting for approval',
-        data: movie 
-      });
+      try {
+        await ApprovalRequest.create({
+          staffId: movie.createdBy,
+          type: 'movie',
+          requestData: { ...movie.toObject(), ...updateData },
+          referenceId: movie._id,
+          status: 'pending'
+        });
+        console.log("Approval request created successfully");
+      } catch (error) {
+        console.error("Error creating approval request:", error);
+        throw error;
+      }
     }
  
     if (movie.status === 'rejected') {
@@ -342,11 +367,13 @@ const updateMovie = async (req, res) => {
       });
     }
 
+    console.log("Updating movie with data:", updateData);
     const updatedMovie = await Movie.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true, runValidators: true }
+      { new: true, runValidators: false } // Tắt validator của Mongoose
     );
+    console.log("Movie updated successfully:", updatedMovie);
 
     res.status(200).json({
       success: true,
@@ -354,6 +381,7 @@ const updateMovie = async (req, res) => {
       data: updatedMovie
     });
   } catch (error) {
+    console.error("Error in updateMovie:", error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -364,6 +392,23 @@ const updateMovie = async (req, res) => {
 
 const deleteMovie = async (req, res) => {
   try {
+    // Chỉ kiểm tra các suất chiếu từ hiện tại trở đi
+    const currentDate = new Date();
+    
+    // Kiểm tra cả suất chiếu đang chờ duyệt và đã được duyệt
+    const hasScreenings = await Screening.findOne({
+      movieId: req.params.id,
+      isActive: true,
+      startTime: { $gte: currentDate }
+    });
+
+    if (hasScreenings) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa phim đang có suất chiếu sắp tới. Vui lòng xóa tất cả suất chiếu trước."
+      });
+    }
+
     const movie = await Movie.findByIdAndUpdate(
       req.params.id,
       { isActive: false },

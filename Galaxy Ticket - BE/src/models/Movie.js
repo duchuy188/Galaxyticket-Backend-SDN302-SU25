@@ -75,13 +75,14 @@ const movieSchema = new mongoose.Schema(
     endDate: {
       type: Date,
       validate: {
-        validator: function (v) {
+        validator: function (v, doc) {
           if (!v) return true;
           
           const endDate = new Date(v);
           endDate.setHours(0, 0, 0, 0);
           
-          const releaseDate = new Date(this.releaseDate);
+          // Lấy releaseDate từ doc hoặc this tùy context
+          const releaseDate = new Date(doc.releaseDate || this.releaseDate);
           releaseDate.setHours(0, 0, 0, 0);
           
           return endDate >= releaseDate;

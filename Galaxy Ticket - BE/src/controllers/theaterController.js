@@ -100,6 +100,22 @@ const deleteTheater = async (req, res) => {
             });
         }
 
+        // Kiểm tra xem có suất chiếu nào sắp tới tại rạp này không
+        const currentDate = new Date();
+        const Screening = require('../models/Screening');
+        const hasScreenings = await Screening.findOne({
+            theaterId: req.params.id,
+            isActive: true,
+            startTime: { $gte: currentDate }
+        });
+
+        if (hasScreenings) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa rạp đang có suất chiếu sắp tới. Vui lòng xóa tất cả suất chiếu trước."
+            });
+        }
+
         theater.status = false;
         await theater.save();
         res.json({
