@@ -81,8 +81,23 @@ const movieSchema = new mongoose.Schema(
           const endDate = new Date(v);
           endDate.setHours(0, 0, 0, 0);
           
-          // Lấy releaseDate từ doc hoặc this tùy context
-          const releaseDate = new Date(doc.releaseDate || this.releaseDate);
+          // Kiểm tra xem doc và this có tồn tại trước khi truy cập
+          let releaseDateValue;
+          
+          // Nếu đang tạo mới (this.releaseDate tồn tại)
+          if (this && this.releaseDate) {
+            releaseDateValue = this.releaseDate;
+          } 
+          // Nếu đang cập nhật (doc.releaseDate tồn tại)
+          else if (doc && doc.releaseDate) {
+            releaseDateValue = doc.releaseDate;
+          } 
+          // Nếu không tìm thấy releaseDate ở cả hai nơi, bỏ qua validation
+          else {
+            return true;
+          }
+          
+          const releaseDate = new Date(releaseDateValue);
           releaseDate.setHours(0, 0, 0, 0);
           
           return endDate >= releaseDate;

@@ -10,6 +10,8 @@ const {
   createMovie,
   deleteMovie,
   updateMovie,
+  activateMovie, 
+  getDeletedMovies,
 } = require("../controllers/movieController");
 
 
@@ -68,6 +70,10 @@ router.get("/member", authenticate, authorizeRoles("member"), updateMovieShowing
 router.get("/", authenticate, authorizeRoles("staff", "manager"), updateMovieShowingStatus, getAllMovies);
 
 
+// Đặt route /deleted trước route /:id
+router.get("/deleted", authenticate, authorizeRoles("staff", "manager"), getDeletedMovies);
+
+// Sau đó mới đến route /:id
 router.get("/:id", updateMovieShowingStatus, getMovieById);
 
 
@@ -76,5 +82,9 @@ router.put("/:id", authenticate, authorizeRoles("staff"), upload.single("poster"
 
 
 router.delete("/:id", authenticate, authorizeRoles("manager","staff"), deleteMovie);
+
+
+router.patch('/:id/activate', authenticate, authorizeRoles("staff", "manager"), activateMovie);
+
 
 module.exports = router;

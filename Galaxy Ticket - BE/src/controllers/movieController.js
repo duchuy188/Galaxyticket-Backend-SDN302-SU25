@@ -91,7 +91,6 @@ const createMovie = async (req, res) => {
       actors
     } = req.body;
 
-  
     if (directors && typeof directors === 'string') {
       try {
         directors = JSON.parse(directors);
@@ -434,6 +433,86 @@ const deleteMovie = async (req, res) => {
   }
 };
 
+// Activate a movie (set isActive to true and request approval)
+const activateMovie = async (req, res) => {
+  try {
+    const movie = await Movie.findById(req.params.id);
+    
+    if (!movie) {
+      return res.status(404).json({
+        success: false,
+        message: "Movie not found",
+      });
+    }
+    
+    if (movie.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "Movie is already active",
+      });
+    }
+    
+    // Đặt lại trạng thái và kích hoạt
+    movie.isActive = true;
+    movie.status = "pending";
+    movie.rejectionReason = null;
+    await movie.save();
+    
+    // Tạo approval request mới
+    await ApprovalRequest.create({
+      staffId: movie.createdBy || req.user.userId, 
+      type: 'movie',
+      requestData: movie.toObject(),
+      referenceId: movie._id,
+      status: 'pending'
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: "Movie activated and submitted for approval",
+      data: movie,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get deleted movies
+const getDeletedMovies = async (req, res) => {
+  try {
+    if (!req.user || (req.user.role !== "staff" && req.user.role !== "manager")) {
+      return res.status(403).json({
+        success: false,
+        message: "You don't have permission to view deleted movies",
+      });
+    }
+
+    const { genre, status } = req.query;
+    let query = { isActive: false };
+
+    if (genre) query.genre = genre;
+    if (status) query.status = status;
+
+    // Thêm phần này để truy vấn và trả về kết quả
+    const movies = await Movie.find(query).sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Get deleted movies successfully",
+      data: movies,
+      count: movies.length,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // Helper function to validate URL
 const isValidUrl = (string) => {
   try {
@@ -450,4 +529,6 @@ module.exports = {
   createMovie,
   updateMovie,
   deleteMovie,
+  activateMovie,
+  getDeletedMovies,  // Thêm hàm mới vào exports
 };
