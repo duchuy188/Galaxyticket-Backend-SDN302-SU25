@@ -172,7 +172,7 @@ const createMovie = async (req, res) => {
     if (endDate && new Date(endDate) <= new Date(releaseDate)) {
       return res.status(400).json({
         success: false,
-        message: "End date must be after release date",
+        message: "Ngày kết thúc phải sau ngày khởi chiếu",
       });
     }
 
@@ -317,8 +317,23 @@ const updateMovie = async (req, res) => {
       }
     }
 
- 
-    // Kiểm tra cả trường hợp cập nhật endDate và trường hợp giữ nguyên endDate cũ
+    // Validate releaseDate if provided
+    if (updateData.releaseDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const releaseDate = new Date(updateData.releaseDate);
+      releaseDate.setHours(0, 0, 0, 0);
+      
+      if (releaseDate < today) {
+        return res.status(400).json({
+          success: false,
+          message: "Ngày khởi chiếu phải là ngày trong tương lai",
+        });
+      }
+    }
+
+
     const endDate = updateData.endDate || movie.endDate;
     const releaseDate = updateData.releaseDate || movie.releaseDate;
     
@@ -328,7 +343,7 @@ const updateMovie = async (req, res) => {
       console.log("Validation failed: End date must be after release date");
       return res.status(400).json({
         success: false,
-        message: "End date must be after release date",
+        message: "Ngày kết thúc phải sau ngày khởi chiếu",
       });
     }
 
