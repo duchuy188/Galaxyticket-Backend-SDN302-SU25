@@ -1,11 +1,20 @@
 const nodemailer = require("nodemailer");
+require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.GMAIL_EMAIL,
     pass: process.env.GMAIL_APP_PASSWORD,
   },
+});
+
+transporter.verify().then(() => {
+  console.log("SMTP server is ready to take messages");
+}).catch(err => {
+  console.error("SMTP verify failed:", err);
 });
 
 /**
@@ -18,20 +27,10 @@ const transporter = nodemailer.createTransport({
  */
 const sendEmail = async ({ to, subject, text, html }) => {
   const mailOptions = {
-    from: process.env.GMAIL_EMAIL,
-    to,
-    subject,
-    text,
-    html,
+    from: `"Galaxy Ticket" <${process.env.GMAIL_EMAIL}>`,
+    to, subject, text, html,
   };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("📨 Email sent to", to);
-  } catch (error) {
-    console.error("❌ Lỗi gửi email:", error.message);
-    throw new Error("Không thể gửi email");
-  }
+  await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail;
