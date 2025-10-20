@@ -1224,3 +1224,132 @@ exports.adminGetBookings = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Check-in booking by QR code
+exports.checkInByQR = async (req, res) => {
+    try {
+        const { qrData } = req.body;
+        
+        // Validate input
+        if (!qrData) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu dữ liệu QR code'
+            });
+        }
+
+        // Extract booking ID from QR data
+        // QR data format: "Mã đặt vé: {bookingId}\nPhim: ..."
+        let bookingId;
+        try {
+            const lines = qrData.split('\n');
+            const bookingLine = lines.find(line => line.includes('Mã đặt vé:') || line.includes('Mã khuyến mãi:'));
+            if (bookingLine) {
+                bookingId = bookingLine.split(':')[1].trim();
+            } else {
+                // Fallback: try to extract ObjectId from QR data
+                const objectIdMatch = qrData.match(/[0-9a-fA-F]{24}/);
+                if (objectIdMatch) {
+                    bookingId = objectIdMatch[0];
+                }
+            }
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: 'QR code không đúng định dạng'
+            });
+        }
+
+        // Validate booking ID format
+        if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'QR code không hợp lệ'
+            });
+        }
+
+        // Find booking with populated data
+        const booking = await Booking.findById(bookingId)
+            .populate({
+                path: 'screeningId',
+                populate: [{
+                    path: 'movieId',
+                    select: 'title duration'
+                }, {
+                    path: 'roomId',
+                    select: 'name',
+                    populate: {
+                        path: 'theaterId',
+                        select: 'name'
+                    }
+                }]
+            })
+            .populate('userId', 'name email');
+
+        if (!booking) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy vé với QR code này'
+            });
+        }
+
+        // Validate booking status
+        if (booking.paymentStatus !== 'paid') {
+            return res.status(400).json({
+                success: false,
+                message: 'Vé chưa được thanh toán'
+            });
+        }
+
+        if (booking.checkInStatus === 'checked_in') {
+            return res.status(400).json({
+                success: false,
+                message: 'Vé này đã được check-in rồi'
+            });
+        }
+
+        // Validate screening time - không cho check-in sau khi phim đã chiếu xong
+        const now = new Date();
+        const screeningTime = new Date(booking.screeningId.startTime);
+        const movieDuration = booking.screeningId.movieId.duration; // thời lượng phim (phút)
+        const movieEndTime = new Date(screeningTime.getTime() + movieDuration * 60 * 1000);
+
+        if (now > movieEndTime) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vé đã hết hạn sử dụng (phim đã chiếu xong)'
+            });
+        }
+
+        // Perform check-in
+        booking.checkInStatus = 'checked_in';
+        booking.checkedInAt = now;
+        booking.checkedInBy = req.user.userId;
+        await booking.save();
+
+        // Return success response
+        res.json({
+            success: true,
+            message: 'Check-in thành công',
+            data: {
+                bookingId: booking._id,
+                movieTitle: booking.screeningId.movieId.title,
+                seatNumbers: booking.seatNumbers,
+                screeningTime: booking.screeningId.startTime,
+                roomName: booking.screeningId.roomId.name,
+                theaterName: booking.screeningId.roomId.theaterId.name,
+                customerName: booking.userId.name,
+                checkedInAt: booking.checkedInAt,
+                checkedInBy: req.user.name || req.user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in checkInByQR:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xử lý QR code',
+            error: error.message
+        });
+    }
+};

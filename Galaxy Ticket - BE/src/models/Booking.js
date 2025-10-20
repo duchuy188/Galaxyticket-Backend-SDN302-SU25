@@ -60,6 +60,23 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         trim: true,
         default: null
+    },
+    checkInStatus: {
+        type: String,
+        enum: {
+            values: ['not_checked_in', 'checked_in'],
+            message: 'Trạng thái check-in không hợp lệ'
+        },
+        default: 'not_checked_in'
+    },
+    checkedInAt: {
+        type: Date,
+        default: null
+    },
+    checkedInBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     }
 }, {
     timestamps: true

@@ -41,6 +41,20 @@
  *           enum: [pending, paid, failed, cancelled]
  *           default: pending
  *           description: Current payment status of the booking
+ *         checkInStatus:
+ *           type: string
+ *           enum: [not_checked_in, checked_in]
+ *           default: not_checked_in
+ *           description: Check-in status of the booking
+ *         checkedInAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Timestamp when the booking was checked in
+ *         checkedInBy:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the staff member who performed the check-in
  *         code:
  *           type: string
  *           nullable: true
@@ -103,6 +117,60 @@
  *         message:
  *           type: string
  *           description: Error message
+ *     
+ *     CheckInRequest:
+ *       type: object
+ *       required:
+ *         - qrData
+ *       properties:
+ *         qrData:
+ *           type: string
+ *           description: QR code data containing booking information
+ *           example: "Mã đặt vé: 507f1f77bcf86cd799439011\nPhim: Avengers: Endgame\nThời gian chiếu phim: 15/01/2024 19:30:00\nPhòng: Phòng 1\nGhế: A1, A2\nTổng tiền: 200.000 VND\nPhương thức thanh toán: VNPay"
+ *     
+ *     CheckInResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           description: Whether the check-in was successful
+ *         message:
+ *           type: string
+ *           description: Response message
+ *         data:
+ *           type: object
+ *           properties:
+ *             bookingId:
+ *               type: string
+ *               description: ID of the checked-in booking
+ *             movieTitle:
+ *               type: string
+ *               description: Title of the movie
+ *             seatNumbers:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               description: Array of seat numbers
+ *             screeningTime:
+ *               type: string
+ *               format: date-time
+ *               description: Screening start time
+ *             roomName:
+ *               type: string
+ *               description: Name of the screening room
+ *             theaterName:
+ *               type: string
+ *               description: Name of the theater
+ *             customerName:
+ *               type: string
+ *               description: Name of the customer
+ *             checkedInAt:
+ *               type: string
+ *               format: date-time
+ *               description: Timestamp when check-in was performed
+ *             checkedInBy:
+ *               type: string
+ *               description: Name or email of the staff who performed check-in
  */
 
 /**
@@ -394,4 +462,111 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/BookingError'
+ *
+ * /api/bookings/check-in:
+ *   post:
+ *     summary: Check-in booking by QR code
+ *     description: Allow staff to check-in customers using QR code from their tickets
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CheckInRequest'
+ *     responses:
+ *       200:
+ *         description: Check-in successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CheckInResponse'
+ *             examples:
+ *               success:
+ *                 summary: Successful check-in
+ *                 value:
+ *                   success: true
+ *                   message: "Check-in thành công"
+ *                   data:
+ *                     bookingId: "507f1f77bcf86cd799439011"
+ *                     movieTitle: "Avengers: Endgame"
+ *                     seatNumbers: ["A1", "A2"]
+ *                     screeningTime: "2024-01-15T19:30:00Z"
+ *                     roomName: "Phòng 1"
+ *                     theaterName: "Galaxy Cinema"
+ *                     customerName: "Nguyễn Văn A"
+ *                     checkedInAt: "2024-01-15T19:00:00Z"
+ *                     checkedInBy: "staff@galaxy.com"
+ *       400:
+ *         description: Bad request - Invalid QR code, booking not paid, already checked-in, or movie finished
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     invalid_qr:
+ *                       value: "QR code không hợp lệ"
+ *                     not_paid:
+ *                       value: "Vé chưa được thanh toán"
+ *                     already_checked_in:
+ *                       value: "Vé này đã được check-in rồi"
+ *                     expired:
+ *                       value: "Vé đã hết hạn sử dụng (phim đã chiếu xong)"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token không hợp lệ hoặc thiếu"
+ *       403:
+ *         description: Forbidden - Insufficient permissions (only staff can check-in)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không có quyền truy cập."
+ *       404:
+ *         description: Booking not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy vé với QR code này"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi khi xử lý QR code"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
  */

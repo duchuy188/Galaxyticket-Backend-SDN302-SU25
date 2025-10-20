@@ -25,4 +25,7 @@ router.post('/:bookingId/status', bookingController.updateBookingStatus);
 // Route để gửi email vé
 router.post('/:bookingId/send-ticket', authenticate, bookingController.sendTicketEmail);
 
+// Route để check-in bằng QR code (chỉ staff)
+router.post('/check-in', authenticate, requireRole('staff'), bookingController.checkInByQR);
+
 module.exports = router;
