@@ -210,12 +210,9 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = expires;
     await user.save();
 
-    await sendEmail({
-      to: email,
-      subject: "Mã OTP đặt lại mật khẩu",
-      text: `Mã OTP của bạn là ${otp}. Có hiệu lực trong 15 phút.`,
-      html: `<p>Mã OTP của bạn là: <strong>${otp}</strong></p><p>Có hiệu lực trong 15 phút.</p>`,
-    });
+    const cleanEmail = (email || '').trim();
+    console.log('forgotPassword to =', cleanEmail);
+    await sendEmail({ to: cleanEmail, subject: "Mã OTP đặt lại mật khẩu", otp, expiresIn: 15 });
 
     res.json({ message: "Đã gửi OTP đến email của bạn" });
   } catch (err) {
