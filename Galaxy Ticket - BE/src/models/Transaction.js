@@ -6,10 +6,17 @@ const transactionSchema = new mongoose.Schema({
         ref: 'Booking',
         required: true
     },
+    transactionNo: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     vnpayCode: {
         type: String,
-        required: true,
-        unique: true
+        // keep for backward compatibility; not strictly required if transactionNo is used
+        required: false,
+        unique: true,
+        sparse: true
     },
     amount: {
         type: Number,
@@ -25,7 +32,7 @@ const transactionSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     }
 }, {
     timestamps: true,

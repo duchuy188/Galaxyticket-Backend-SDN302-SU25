@@ -24,7 +24,7 @@ function sortObject(obj) {
     return sorted;
 }
 
-const createPaymentUrl = async(req, res) => {
+const createPaymentUrl = async (req, res) => {
     try {
         const { amount, bookingId, userId } = req.body;
 
@@ -72,8 +72,8 @@ const createPaymentUrl = async(req, res) => {
 
         const paymentUrl = `${vnpayConfig.vnp_Url}?` +
             Object.keys(vnp_Params)
-            .map(key => `${key}=${encodeURIComponent(vnp_Params[key])}`)
-            .join('&');
+                .map(key => `${key}=${encodeURIComponent(vnp_Params[key])}`)
+                .join('&');
 
         return res.status(200).json({
             code: '00',
@@ -90,9 +90,9 @@ const createPaymentUrl = async(req, res) => {
     }
 };
 
-const vnpayReturn = async(req, res) => {
+const vnpayReturn = async (req, res) => {
     try {
-        let vnp_Params = {...req.query };
+        let vnp_Params = { ...req.query };
         const secureHash = vnp_Params['vnp_SecureHash'];
 
         // Basic validation
@@ -136,9 +136,11 @@ const vnpayReturn = async(req, res) => {
                 session.startTransaction();
 
                 try {
-                    const transaction = await Transaction.findOneAndUpdate({ vnpayCode: vnp_Params['vnp_TransactionNo'] }, {
+                    const filterKey = vnp_Params['vnp_TransactionNo'] ? { transactionNo: vnp_Params['vnp_TransactionNo'] } : { vnpayCode: vnp_Params['vnp_TxnRef'] };
+                    const transaction = await Transaction.findOneAndUpdate(filterKey, {
                         bookingId: bookingId,
-                        vnpayCode: vnp_Params['vnp_TransactionNo'],
+                        transactionNo: vnp_Params['vnp_TransactionNo'] || null,
+                        vnpayCode: vnp_Params['vnp_TransactionNo'] || vnp_Params['vnp_TxnRef'] || null,
                         amount: vnp_Params['vnp_Amount'] / 100,
                         status: 'success',
                         userId: req.user ? req.user._id : null
@@ -150,10 +152,10 @@ const vnpayReturn = async(req, res) => {
 
                     await Booking.findByIdAndUpdate(
                         bookingId, {
-                            status: 'confirmed',
-                            paymentStatus: 'paid',
-                            paymentDate: moment(vnp_Params['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate()
-                        }, { session }
+                        status: 'confirmed',
+                        paymentStatus: 'paid',
+                        paymentDate: moment(vnp_Params['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate()
+                    }, { session }
                     );
 
                     await session.commitTransaction();
@@ -176,14 +178,16 @@ const vnpayReturn = async(req, res) => {
                 } finally {
                     session.endSession();
                 }
-            } else {
-                await Transaction.findOneAndUpdate({ vnpayCode: vnp_Params['vnp_TransactionNo'] }, {
-                    bookingId: bookingId,
-                    vnpayCode: vnp_Params['vnp_TransactionNo'],
-                    amount: vnp_Params['vnp_Amount'] / 100,
-                    status: 'failed',
-                    userId: req.user ? req.user._id : null
-                }, { upsert: true });
+                } else {
+                    const filterKeyFail = vnp_Params['vnp_TransactionNo'] ? { transactionNo: vnp_Params['vnp_TransactionNo'] } : { vnpayCode: vnp_Params['vnp_TxnRef'] };
+                    await Transaction.findOneAndUpdate(filterKeyFail, {
+                        bookingId: bookingId,
+                        transactionNo: vnp_Params['vnp_TransactionNo'] || null,
+                        vnpayCode: vnp_Params['vnp_TransactionNo'] || vnp_Params['vnp_TxnRef'] || null,
+                        amount: vnp_Params['vnp_Amount'] / 100,
+                        status: 'failed',
+                        userId: req.user ? req.user._id : null
+                    }, { upsert: true });
 
                 // Cập nhật trạng thái booking về failed/cancelled khi thanh toán thất bại
                 await Booking.findByIdAndUpdate(
@@ -192,15 +196,15 @@ const vnpayReturn = async(req, res) => {
 
                 // Nhả ghế khi thanh toán thất bại
                 const booking = await Booking.findById(bookingId);
-                if (booking) {
-                    await Seat.updateMany({
-                        screeningId: booking.screeningId,
-                        seatNumber: { $in: booking.seatNumbers }
-                    }, {
-                        status: 'available',
-                        reservedAt: null
-                    });
-                }
+                    if (booking) {
+                        await Seat.updateMany({
+                            screeningId: booking.screeningId,
+                            seatNumber: { $in: booking.seatNumbers }
+                        }, {
+                            status: 'available',
+                            reservedAt: null
+                        });
+                    }
 
                 return res.status(200).json({
                     code: rspCode,
