@@ -49,7 +49,14 @@ const createPaymentUrl = async(req, res) => {
         vnp_Params['vnp_OrderInfo'] = 'Thanh toan dat ve: ' + bookingId;
         vnp_Params['vnp_OrderType'] = 'billpayment';
         vnp_Params['vnp_Amount'] = amount * 100;
-        vnp_Params['vnp_ReturnUrl'] = vnpayConfig.vnp_ReturnUrl;
+        // Use returnUrl provided by client (req.body.returnUrl or req.payload.returnUrl) if present.
+        // Fallback to configured env value `vnpayConfig.vnp_ReturnUrl` when not provided or invalid.
+        const clientReturnUrl = (req && req.body && req.body.returnUrl) || (req && req.payload && req.payload.returnUrl) || vnpayConfig.vnp_ReturnUrl;
+        if (typeof clientReturnUrl === 'string' && clientReturnUrl.trim().length > 0) {
+            vnp_Params['vnp_ReturnUrl'] = clientReturnUrl.trim();
+        } else {
+            vnp_Params['vnp_ReturnUrl'] = vnpayConfig.vnp_ReturnUrl;
+        }
         vnp_Params['vnp_IpAddr'] = req.ip || '127.0.0.1';
         vnp_Params['vnp_CreateDate'] = createDate;
         vnp_Params['vnp_BankCode'] = 'NCB';
