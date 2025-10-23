@@ -1034,7 +1034,7 @@ exports.updateBookingStatus = async(req, res) => {
 
         // Tạo mã QR cho đặt vé đã xác nhận
         const qrContent = [
-            `Mã khuyến mãi: ${booking._id.toString()}`,
+            `Mã đặt vé: ${booking._id.toString()}`,
             `Phim: ${booking.screeningId.movieId.title}`,
             `Thời gian chiếu phim: Ngày: ${new Date(booking.screeningId.startTime).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} vào lúc: ${new Date(booking.screeningId.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })}`,
             `Phòng: ${booking.screeningId.roomId.name}`,
@@ -1242,18 +1242,28 @@ exports.checkInByQR = async (req, res) => {
         // QR data format: "Mã đặt vé: {bookingId}\nPhim: ..."
         let bookingId;
         try {
-            const lines = qrData.split('\n');
+            console.log('QR Data received:', qrData);
+            
+            // Nếu qrData là object, lấy text property
+            const qrText = typeof qrData === 'object' && qrData.text ? qrData.text : qrData;
+            console.log('QR Text extracted:', qrText);
+            
+            const lines = qrText.split('\n');
             const bookingLine = lines.find(line => line.includes('Mã đặt vé:') || line.includes('Mã khuyến mãi:'));
+            
             if (bookingLine) {
                 bookingId = bookingLine.split(':')[1].trim();
+                console.log('Booking ID from QR line:', bookingId);
             } else {
                 // Fallback: try to extract ObjectId from QR data
-                const objectIdMatch = qrData.match(/[0-9a-fA-F]{24}/);
+                const objectIdMatch = qrText.match(/[0-9a-fA-F]{24}/);
                 if (objectIdMatch) {
                     bookingId = objectIdMatch[0];
+                    console.log('Booking ID from regex match:', bookingId);
                 }
             }
         } catch (error) {
+            console.error('Error parsing QR data:', error);
             return res.status(400).json({
                 success: false,
                 message: 'QR code không đúng định dạng'
@@ -1261,10 +1271,13 @@ exports.checkInByQR = async (req, res) => {
         }
 
         // Validate booking ID format
+        console.log('Final booking ID:', bookingId);
+        console.log('Is valid ObjectId:', bookingId ? mongoose.Types.ObjectId.isValid(bookingId) : false);
+        
         if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
             return res.status(400).json({
                 success: false,
-                message: 'QR code không hợp lệ'
+                message: 'QR code không hợp lệ - không tìm thấy booking ID hợp lệ'
             });
         }
 
