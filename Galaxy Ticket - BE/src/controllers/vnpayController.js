@@ -6,6 +6,8 @@ const Transaction = require('../models/Transaction');
 const Booking = require('../models/Booking');
 const mongoose = require('mongoose');
 const Seat = require('../models/Seat');
+const User = require('../models/User');
+const { sendMovieTicket } = require('../services/emailService');
 
 // Helper function to sort object by key
 function sortObject(obj) {
@@ -150,15 +152,86 @@ const vnpayReturn = async (req, res) => {
                         session
                     });
 
+                    // Find and populate booking to get all necessary data for email
+                    const booking = await Booking.findById(bookingId)
+                        .populate({
+                            path: 'screeningId',
+                            populate: [{
+                                path: 'movieId',
+                                select: 'title'
+                            }, {
+                                path: 'roomId',
+                                select: 'name',
+                                populate: {
+                                    path: 'theaterId',
+                                    select: 'name'
+                                }
+                            }]
+                        })
+                        .session(session);
+
+                    if (!booking) {
+                        throw new Error('Booking not found');
+                    }
+
+                    // Update booking status
                     await Booking.findByIdAndUpdate(
                         bookingId, {
                         status: 'confirmed',
                         paymentStatus: 'paid',
-                        paymentDate: moment(vnp_Params['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate()
+                        paymentMethod: 'VNPay',
+                        paymentDate: moment(vnp_Params['vnp_PayDate'], 'YYYYMMDDHHmmss').toDate(),
+                        emailSent: false // Set to false initially, will be set to true after email is sent
                     }, { session }
                     );
 
+                    // Update seats to booked status
+                    await Seat.updateMany({
+                        screeningId: booking.screeningId,
+                        seatNumber: { $in: booking.seatNumbers }
+                    }, {
+                        status: 'booked',
+                        reservedAt: null
+                    }, { session });
+
                     await session.commitTransaction();
+
+                    // Send email AFTER transaction is committed (outside transaction to avoid blocking)
+                    try {
+                        const user = await User.findById(booking.userId);
+                        
+                        if (user && user.email && booking.screeningId && booking.screeningId.movieId && booking.screeningId.roomId) {
+                            // Atomic update to prevent duplicate emails
+                            const updatedBooking = await Booking.findOneAndUpdate(
+                                { _id: booking._id, emailSent: false },
+                                { $set: { emailSent: true } },
+                                { new: true }
+                            );
+
+                            if (updatedBooking) {
+                                const ticketData = {
+                                    movieName: booking.screeningId.movieId.title,
+                                    screeningTime: booking.screeningId.startTime,
+                                    seatNumbers: booking.seatNumbers,
+                                    cinemaName: booking.screeningId.roomId.theaterId.name,
+                                    hallName: booking.screeningId.roomId.name,
+                                    bookingCode: booking._id.toString(), // Use booking ID as code if no promotion code
+                                    totalPrice: booking.totalPrice,
+                                    qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${booking._id}`
+                                };
+
+                                await sendMovieTicket(user.email, ticketData);
+                                console.log('✅ Email xác nhận vé đã được gửi đến:', user.email);
+                            } else {
+                                console.log('ℹ️  Email đã được gửi trước đó cho booking:', booking._id);
+                            }
+                        } else {
+                            console.warn('⚠️  Không thể gửi email: thiếu thông tin user hoặc booking');
+                        }
+                    } catch (emailError) {
+                        // Log error but don't fail the payment
+                        console.error('❌ Lỗi khi gửi email (payment vẫn thành công):', emailError.message);
+                    }
 
                     return res.status(200).json({
                         code: '00',
